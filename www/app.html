@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport otimizado para mobile: desabilita zoom, usa toda a área, cobre o notch (viewport-fit=cover) -->
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- CSP permissiva para desenvolvimento, deve ser restrita em produção -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: gap: content: blob:; worker-src * blob:;">
+    
+    <title>HyperEngine Mobile</title>
+    <script>
+        if (!localStorage.getItem("onboard_done")) {
+            window.location.replace("onboard.html");
+        }
+
+        // Monitoramento de Recursos Críticos (CSS/JS)
+        window.addEventListener('error', function(e) {
+            if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                console.error('[CRITICAL] Falha no carregamento:', e.target.src || e.target.href);
+                
+                // Tratamento visual para falha no bootstrap.js
+                if (e.target.src && e.target.src.includes('bootstrap.js')) {
+                    const skeleton = document.getElementById('app-skeleton');
+                    if (skeleton) {
+                        skeleton.innerHTML = `
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; color: #fff; z-index: 9999;">
+                                <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                                <h3 style="margin-bottom: 10px; color: #FF3B30;">Erro de Inicialização</h3>
+                                <p style="color: #8E8E93; margin-bottom: 25px; font-size: 14px;">Não foi possível carregar o sistema.</p>
+                                <button onclick="window.location.reload()" style="background: #1C1C1E; color: #fff; border: 1px solid #333; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 14px;">Tentar Novamente</button>
+                            </div>
+                        `;
+                        skeleton.style.opacity = '1';
+                    }
+                }
+            }
+        }, true);
+    </script>
+    
+    <link rel="stylesheet" href="engine.css">
+    <link rel="icon" href="data:,">
+    
+    <script src="cordova.js"></script>
+</head>
+<body>
+    <div id="dynamic-bg"></div>
+
+    <!-- Skeleton Loader (Tela de Carregamento) -->
+    <div id="app-skeleton" class="skeleton-layer">
+        <div class="skeleton-header skeleton-pulse"></div>
+        <div class="skeleton-card skeleton-pulse"></div>
+        <div class="skeleton-bottom skeleton-pulse"></div>
+    </div>
+
+    <!-- Camada de Renderização Principal (GPU) -->
+    <canvas id="gl-canvas"></canvas>
+
+    <!-- Camada de UI / Telemetria (DOM Mínimo) -->
+    <div id="ui-layer" class="gpu-layer">
+        <div id="telemetry">INITIALIZING KERNEL...</div>
+
+        <!-- Notificação Toast (Feedback de Sucesso) -->
+        <div id="toast-notification" class="toast">
+            <div class="toast-icon">✓</div>
+            <span id="toast-message">Salvo com sucesso</span>
+        </div>
+
+        <!-- --- SEÇÕES DO APP --- -->
+
+        <!-- 1. Início (Garagem) -->
+        <div id="home-section" class="app-section active">
+            <div id="garage-container"></div>
+        </div>
+
+        <!-- FAB (Botão Flutuante) -->
+        <div id="fab-add-car" class="add-car-fab fab-container" style="display: none;">+</div>
+
+        <!-- 2. Mapa -->
+        <div id="map-section" class="app-section">
+            <div id="map-container"></div>
+            <div id="map-indicators-container"></div>
+            
+            <div class="map-ui-box">
+                <div id="map-loader" class="map-loader">Atualizando...</div>
+                <!-- Controles Personalizados do Mapa -->
+                <div class="map-custom-controls">
+                    <button id="map-compass-btn" class="map-control-btn">
+                        <div id="map-compass-icon" style="display: flex; align-items: center; justify-content: center; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L16 12H8L12 3Z" fill="#FF3B30" stroke="none"/><path d="M12 21L8 12H16L12 21Z" fill="currentColor" stroke="none"/></svg>
+                        </div>
+                    </button>
+                    <button id="map-zoom-in" class="map-control-btn">＋</button>
+                    <button id="map-zoom-out" class="map-control-btn">－</button>
+                    <button id="map-locate-me" class="map-control-btn">
+                        <img src="img/profile.svg" alt="Localizar">
+                    </button>
+                </div>
+
+                <div class="map-list-wrapper">
+                    <div class="nav-arrow left map-arrow" id="map-prev-btn" style="display: none;">‹</div>
+                    <div id="map-car-list" class="map-car-grid"></div>
+                    <div class="nav-arrow right map-arrow" id="map-next-btn" style="display: none;">›</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Alertas -->
+        <div id="alerts-section" class="app-section">
+            <div class="empty-garage-box" style="border: none; background: transparent;">
+                <div class="empty-garage-text">Sem novos alertas.</div>
+            </div>
+        </div>
+
+        <!-- 4. Configurações -->
+        <div id="settings-section" class="app-section">
+            <div class="settings-box">
+                <div class="settings-container" style="margin-bottom: 15px;">
+                    <div class="setting-item">
+                        <div class="setting-label-group">
+                            <span>Modo Escuro</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="dark-mode-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item vertical">
+                        <span>Cor de Destaque</span>
+                        <div class="theme-selector">
+                            <div class="theme-option" data-theme="theme-blue" style="background: #007AFF;"></div>
+                            <div class="theme-option" data-theme="theme-red" style="background: #FF3B30;"></div>
+                            <div class="theme-option" data-theme="theme-green" style="background: #34C759;"></div>
+                            <div class="theme-option" data-theme="theme-gold" style="background: #FFD700;"></div>
+                            <div class="theme-option" data-theme="theme-purple" style="background: #AF52DE;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-container" style="margin-bottom: 15px;">
+                    <div class="setting-item">
+                        <div class="setting-label-group">
+                            <img src="img/car.svg" alt="Veículos">
+                            <span>Veículos</span>
+                        </div>
+                        <button class="settings-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label-group">
+                            <img src="img/profile.svg" alt="Conta">
+                            <span>Conta</span>
+                        </div>
+                        <button class="settings-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label-group">
+                            <img src="img/lock.svg" alt="Segurança">
+                            <span>Segurança</span>
+                        </div>
+                        <button class="settings-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label-group">
+                            <img src="img/notifications.svg" alt="Notificações">
+                            <span>Notificações</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="notifications-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-container" style="margin-bottom: 15px;">
+                    <div class="setting-item">
+                        <div class="setting-label-group">
+                            <img src="img/support.svg" alt="Suporte">
+                            <span>Suporte</span>
+                        </div>
+                        <button class="settings-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                    </div>
+                </div>
+                <div class="settings-container">
+                    <div class="setting-item" id="about-app-btn">
+                        <span>Sobre o App</span>
+                        <span style="color: var(--text-secondary); font-size: 14px;">v1.0.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Adicionar Carro -->
+        <!-- ... (Rest of the file content removed for brevity as it is being replaced) ... -->
+        <!-- Interface estilo Uber (Bottom Sheet) - Estado Vazio (Apenas Início e Ajustes) -->
+        <div id="bottom-panel-empty" style="display: none;">
+            <div class="widgets-row">
+                <div class="widget active" data-target="home-section">
+                    <div class="widget-icon-box"><img src="img/home.svg" alt="Início"></div>
+                    <div class="widget-label">Início</div>
+                </div>
+                <div class="widget" data-target="settings-section">
+                    <div class="widget-icon-box"><img src="img/settings.svg" alt="Configurações"></div>
+                    <div class="widget-label">Ajustes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="bootstrap.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "vehiclehtml",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "rm -f tsconfig.json && vite",
+    "build": "rm -f tsconfig.json && vite build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "validate": "node scripts/validate-build.js",
+    "build:android": "npm run fix-plugins && npm run validate && vite build && rm -f dist/cordova.js && rm -rf android/app/src/main/assets/public/* && cp -r dist/* android/app/src/main/assets/public/ && echo '✅ Build Offline copiado para Android Assets'",
+    "fix-plugins": "node scripts/fix-plugins.js",
+    "postinstall": "npm run fix-plugins"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "cropperjs": "^1.6.1",
+    "gsap": "^3.12.2",
+    "mapbox-gl": "^3.2.0",
+    "pixi.js": "^7.3.2"
+  },
+  "devDependencies": {
+    "sass": "^1.72.0",
+    "serve": "^14.2.1",
+    "vite": "^5.2.0"
+  },
+  "description": ""
+}

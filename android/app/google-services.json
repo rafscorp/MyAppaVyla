@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "44935651727",
+    "project_id": "device-streaming-fb089dad",
+    "storage_bucket": "device-streaming-fb089dad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44935651727:android:eaa5425e92b61aa281abfa",
+        "android_client_info": {
+          "package_name": "com.vyla.vehicle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxwTrVgJPB_kjcye009tNynM4b_Q1iJO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

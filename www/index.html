@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: gap: content: blob:; worker-src * blob:;">
+    
+    <title>HyperEngine Mobile</title>
+    <script src="cordova.js"></script>
+    <style>
+        body { background-color: #000; margin: 0; }
+    </style>
+    <script>
+        document.addEventListener('deviceready', () => {
+            if (localStorage.getItem("onboard_done")) {
+                window.location.replace("app.html");
+            } else {
+                window.location.replace("onboard.html");
+            }
+        }, false);
+
+        // Fallback para navegador
+        if (!window.cordova) {
+            window.onload = () => {
+                if (localStorage.getItem("onboard_done")) {
+                    window.location.replace("app.html");
+                } else {
+                    window.location.replace("onboard.html");
+                }
+            };
+        }
+    </script>
+</head>
+<body>
+</body>
+</html>

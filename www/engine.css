@@ -1,0 +1,2794 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); REMOVED: No external CDNs */
+
+/* Reset agressivo */
+:root {
+    --bg-color: #F2F2F7;
+    --card-bg: #FFFFFF;
+    --card-bg-rgb: 255, 255, 255;
+    --text-primary: #000000;
+    --text-secondary: #8E8E93;
+    --border-color: rgba(0,0,0,0.05);
+    --shadow-color: rgba(0,0,0,0.08);
+    --nav-arrow-bg: #E5E5EA;
+    --nav-arrow-color: #000;
+    --top-action-bg: rgba(255, 255, 255, 0.9);
+    --icon-filter: none;
+    --placeholder-bg: #F5F5F7;
+    --bottom-panel-bg: #FFFFFF;
+    --toast-bg: rgba(30, 30, 30, 0.95);
+    --accent-color: #007AFF;
+    --icon-accent-filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);
+    --accent-rgb: 0, 122, 255;
+    --ui-scale: 1; /* Definido via JS */
+    --app-scale: var(--ui-scale);
+    --app-height: 100%;
+}
+
+body.dark-mode {
+    --bg-color: #000000;
+    --card-bg: #1C1C1E;
+    --card-bg-rgb: 28, 28, 30;
+    --text-primary: #FFFFFF;
+    --text-secondary: #8E8E93;
+    --border-color: rgba(255,255,255,0.1);
+    --shadow-color: rgba(0,0,0,0.5);
+    --nav-arrow-bg: #2C2C2E;
+    --nav-arrow-color: #FFF;
+    --top-action-bg: rgba(44, 44, 46, 0.9);
+    --icon-filter: invert(1);
+    --placeholder-bg: #2C2C2E;
+    --bottom-panel-bg: #1C1C1E;
+    --toast-bg: rgba(50, 50, 50, 0.95);
+}
+
+/* Temas Dinâmicos */
+body.theme-blue { 
+    --accent-color: #007AFF; 
+    --icon-accent-filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);
+    --accent-rgb: 0, 122, 255;
+}
+body.theme-red { 
+    --accent-color: #FF3B30; 
+    --icon-accent-filter: invert(24%) sepia(96%) saturate(6482%) hue-rotate(355deg) brightness(97%) contrast(113%);
+    --accent-rgb: 255, 59, 48;
+}
+body.theme-green { 
+    --accent-color: #34C759; 
+    --icon-accent-filter: invert(66%) sepia(50%) saturate(5463%) hue-rotate(93deg) brightness(98%) contrast(92%);
+    --accent-rgb: 52, 199, 89;
+}
+body.theme-gold { 
+    --accent-color: #FFD700; 
+    --icon-accent-filter: invert(82%) sepia(34%) saturate(5533%) hue-rotate(359deg) brightness(101%) contrast(106%);
+    --accent-rgb: 255, 215, 0;
+}
+body.theme-purple { 
+    --accent-color: #AF52DE; 
+    --icon-accent-filter: invert(46%) sepia(86%) saturate(3431%) hue-rotate(265deg) brightness(91%) contrast(92%);
+    --accent-rgb: 175, 82, 222;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none; /* Desabilita gestos do browser */
+    -webkit-touch-callout: none; /* Desabilita menu de contexto no iOS */
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: var(--app-height);
+    background-color: var(--bg-color);
+    overflow: hidden;
+    position: fixed; /* Previne bounce no iOS */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    contain: layout size style;
+    content-visibility: auto;
+    perspective: 1000px; /* Ajuda na estabilidade de transformações 3D e evita piscadas */
+}
+
+/* Remove scrollbar */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Permite seleção apenas em inputs editáveis */
+input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    touch-action: auto; /* Reabilita gestos e foco em inputs */
+}
+
+/* Previne comportamento de arrastar imagens (Ghost Image) */
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+}
+
+#dynamic-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+#dynamic-bg.active {
+    opacity: 1;
+}
+
+/* Canvas ocupa tudo */
+#gl-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: strict;
+    /* image-rendering: optimizeSpeed; REMOVIDO: Causa serrilhado em alguns dispositivos */
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Camada de UI isolada */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none; /* Pass-through para o canvas */
+}
+
+.ui-layer {
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
+}
+
+/* Força composição em camada separada na GPU */
+.gpu-layer {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+}
+
+#telemetry {
+    display: none;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #333;
+    font-family: 'Inter', monospace;
+    font-size: 12px;
+    text-shadow: none;
+    white-space: pre;
+    pointer-events: none;
+}
+
+/* App Sections (Home, Map, Alerts, Settings) */
+.app-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding-bottom: calc(140px * var(--ui-scale)); /* Espaço reservado para o menu inferior */
+    padding-top: env(safe-area-inset-top);
+    box-sizing: border-box;
+    display: none; /* Oculto por padrão */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Centraliza o conteúdo verticalmente na área livre */
+    pointer-events: none; /* Permite clicar fora da box */
+    z-index: 5;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translate3d(0,0,0); /* Force GPU Layer */
+    backface-visibility: hidden;
+}
+
+.app-section.active {
+    display: flex;
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+/* Animação de entrada para itens da lista */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0); /* Deslocamento ainda menor para menos pixels sujos */
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0); /* Remove scale(1) redundante */
+    }
+}
+
+/* Settings Section Styles */
+.settings-container {
+    width: calc(360px * var(--ui-scale)); /* Largura base escalada */
+    max-width: none; /* Remove limite para fluir com a escala */
+    background: var(--card-bg);
+    border-radius: calc(24px * var(--ui-scale));
+    padding: calc(20px * var(--ui-scale));
+    pointer-events: auto;
+    box-shadow: 0 8px 20px var(--shadow-color);
+    animation: fadeInUp 0.4s ease-out forwards; /* Curva simplificada para performance */
+    /* animation: slideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); REMOVIDO: Animação de layout */
+}
+
+/* Map Section Specifics */
+#map-section {
+    top: 0;
+    height: 100%;
+    padding: 0; /* Remove padding para o mapa ocupar tudo */
+    gap: 0;
+    flex-direction: column;
+    overflow: hidden; /* Garante que nada vaze da seção */
+    justify-content: flex-start; /* Mapa deve ocupar tudo, sem centralizar */
+}
+
+/* Map Styles */
+#map-container {
+    width: 100%;
+    height: 100%; /* Mapa ocupa 100% da altura */
+    position: absolute; /* Posicionamento absoluto para ficar no fundo */
+    top: 0;
+    left: 0;
+    border-radius: 0;
+    z-index: 0; /* Fica atrás de tudo */
+    box-shadow: none;
+    pointer-events: auto; /* Permite interação com o mapa */
+    background-color: var(--bg-color); /* Cor base inicial */
+}
+
+/* Wrapper para posicionar as setas sobre a lista */
+.map-list-wrapper {
+    position: absolute; /* Flutua sobre o mapa */
+    bottom: calc(130px * var(--ui-scale)); /* Ajustado para alinhar com a nova estrutura relativa */
+    width: 100%;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    max-width: 100%; /* Garante que não estoure a largura */
+    flex-shrink: 0; /* Impede que a lista seja esmagada */
+    pointer-events: none; /* Permite clicar no mapa através dos espaços vazios */
+    transform: translate3d(0,0,0); /* Force GPU Layer */
+    backface-visibility: hidden;
+}
+
+.map-list-wrapper .map-arrow {
+    position: absolute !important; /* Força sobreposição (corrige conflito com nav-arrow) */
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 100; /* Garante prioridade máxima sobre o mapa e listas */
+    background: rgba(0, 0, 0, 0.6);
+    color: #FFF;
+    width: calc(50px * var(--ui-scale));
+    height: calc(50px * var(--ui-scale));
+    font-size: calc(28px * var(--ui-scale)); /* Seta maior */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.8); /* OTIMIZAÇÃO: Fundo sólido em vez de blur */
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: auto; /* Reabilita cliques nas setas */
+    touch-action: manipulation; /* Melhora a resposta do clique em telas touch */
+    min-width: max(44px, calc(50px * var(--ui-scale))) !important; /* Garante tamanho mínimo de toque */
+    min-height: max(44px, calc(50px * var(--ui-scale))) !important;
+}
+
+.map-arrow:active { transform: translateY(-50%) scale(0.9); }
+.map-arrow.left { left: max(5px, calc(50% - calc(185px * var(--ui-scale)))); }
+.map-arrow.right { right: max(5px, calc(50% - calc(185px * var(--ui-scale)))); }
+
+/* Map Car List Styles (Substituindo o Mapa) */
+/* Map Car List Styles (Redone for Single View) */
+.map-car-grid, #map-car-list {
+    position: relative; /* Relativo para expandir o wrapper e alinhar setas */
+    bottom: auto;
+    left: auto;
+    z-index: 2;
+    width: 100%;
+    height: auto;
+    flex-shrink: 0; /* Não encolhe, mantém altura do conteúdo */
+    display: flex;
+    flex-direction: row; /* Carrossel Horizontal */
+    align-items: center;
+    overflow-x: scroll; /* Habilita scroll horizontal */
+    overflow-y: hidden;
+    scroll-behavior: auto; /* Igual à Home: JS controla animação das setas */
+    scroll-snap-type: x mandatory; /* Efeito magnético */
+    touch-action: pan-x pan-y; /* Permite gestos de toque */
+    scrollbar-width: none; /* Esconde scrollbar Firefox */
+    padding: calc(10px * var(--ui-scale)) 0;
+    background: transparent;
+    /* will-change removido */
+}
+
+.map-car-grid::-webkit-scrollbar {
+    display: none; /* Esconde scrollbar Chrome/Safari */
+}
+
+/* CORREÇÃO: Permite deslizar tocando em qualquer parte do card (foto, texto, fundo) */
+.map-car-grid *, #map-car-list * {
+    touch-action: pan-x pan-y;
+}
+
+.map-car-item {
+    min-width: 100%; /* Full width */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 calc(15px * var(--ui-scale)); /* Reduzido para dar mais largura ao card */
+    box-sizing: border-box;
+    scroll-snap-align: center; /* Centraliza o item ao soltar */
+    scroll-snap-stop: always; /* Garante parada item por item */
+    contain: content; /* OTIMIZAÇÃO: Isola renderização do item */
+    backface-visibility: hidden; /* Melhora performance em mobile */
+    touch-action: pan-x pan-y; /* Reforço para o container do item */
+    /* content-visibility: auto; Removido */
+}
+
+.map-car-card {
+    background: var(--card-bg);
+    border-radius: calc(18px * var(--ui-scale));
+    padding: calc(20px * var(--ui-scale)) calc(8px * var(--ui-scale)); /* Altura vertical aumentada mais um pouco */
+    width: 100%;
+    max-width: calc(250px * var(--ui-scale)); /* Reduzido um pouco mais */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* OTIMIZAÇÃO: Sombra mais leve */
+    display: flex;
+    flex-direction: row; /* Layout Horizontal */
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    position: relative;
+    pointer-events: auto;
+    transition: transform 0.2s;
+    flex-shrink: 0; /* Garante que o card não deforme */
+    contain: content; /* OTIMIZAÇÃO: Isola o conteúdo do card */
+    transform: translate3d(0,0,0); /* Force GPU Layer */
+    backface-visibility: hidden;
+}
+
+.map-car-photo {
+    width: calc(60px * var(--ui-scale));
+    height: calc(60px * var(--ui-scale));
+    border-radius: 50%; /* Foto Redonda */
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    background: var(--placeholder-bg);
+    /* box-shadow: 0 4px 15px rgba(0,0,0,0.1); REMOVIDO */
+    margin-bottom: 0;
+    flex-shrink: 0;
+    contain: paint; /* OTIMIZAÇÃO: Elemento fixo e isolado */
+}
+
+.map-car-placeholder {
+    width: calc(60px * var(--ui-scale));
+    height: calc(60px * var(--ui-scale));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(22px * var(--ui-scale));
+    background: var(--placeholder-bg);
+    border: 2px solid var(--border-color);
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.map-car-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(2px * var(--ui-scale));
+    flex: 1; /* Ocupa o espaço restante */
+    min-width: 0; /* CRÍTICO: Permite que o texto seja cortado dentro do flex */
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+.map-car-name-text {
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: calc(4px * var(--ui-scale));
+    margin-left: calc(4px * var(--ui-scale)); /* Levemente para a direita */
+    margin-top: 0; /* Corrigido: Remove corte do topo */
+}
+
+.map-car-name-text span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.map-name-icon {
+    width: calc(14px * var(--ui-scale));
+    height: calc(14px * var(--ui-scale));
+    filter: var(--icon-accent-filter);
+    flex-shrink: 0;
+}
+
+.map-car-plate-text {
+    font-size: calc(11px * var(--ui-scale)); /* Aumentado para legibilidade */
+    color: var(--text-secondary);
+    font-weight: 600;
+    background: var(--placeholder-bg);
+    padding: calc(2px * var(--ui-scale)) calc(8px * var(--ui-scale));
+    border-radius: calc(6px * var(--ui-scale));
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.map-car-info .car-plate-display {
+    margin-top: calc(3px * var(--ui-scale));
+    /* box-shadow: 0 1px 3px rgba(0,0,0,0.1); REMOVIDO */
+}
+
+.map-car-info .car-plate-display:active {
+    transform: none; /* Remove deformação ao clicar na placa */
+}
+
+.map-car-btn {
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.25), rgba(var(--accent-rgb), 0.15));
+    color: var(--accent-color);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+    border-radius: 100px;
+    padding: calc(9px * var(--ui-scale)) calc(18px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: calc(12px * var(--ui-scale));
+    margin-left: calc(15px * var(--ui-scale));
+    /* box-shadow: 0 2px 6px rgba(0,0,0,0.15); REMOVIDO */
+    flex-shrink: 0; /* Garante que o botão não encolha */
+    display: flex;
+    align-items: center;
+    gap: calc(6px * var(--ui-scale));
+    text-shadow: 0 0 0.5px currentColor;
+}
+
+.map-car-btn img {
+    width: calc(14px * var(--ui-scale));
+    height: calc(14px * var(--ui-scale));
+    filter: var(--icon-accent-filter);
+}
+
+.mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib {
+    display: none !important; /* Visual mais limpo */
+}
+
+.custom-map-marker {
+    width: calc(48px * var(--app-scale));
+    height: calc(48px * var(--app-scale));
+    border-radius: 50%;
+    background-color: var(--placeholder-bg);
+    background-size: cover;
+    background-position: center;
+    border: 3px solid var(--accent-color);
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.25); REMOVIDO */
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s, box-shadow 0.3s;
+    z-index: 1;
+}
+
+.map-cluster {
+    width: calc(40px * var(--app-scale));
+    height: calc(40px * var(--app-scale));
+    background-color: var(--accent-color);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    border: 3px solid #fff;
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.3); REMOVIDO */
+    cursor: pointer;
+    z-index: 50;
+}
+
+.custom-map-marker.selected {
+    transform: scale(1.4) translateY(-5px); /* Aumenta e sobe um pouco */
+    border-color: #fff; /* Borda branca para contraste */
+    /* box-shadow: 0 15px 35px rgba(0,0,0,0.4), 0 0 0 4px var(--accent-color); REMOVIDO */
+    z-index: 10; /* Fica acima dos outros */
+}
+
+.custom-map-marker:active {
+    transform: scale(0.9);
+}
+
+/* Indicador de Carregamento do Mapa */
+.map-loader {
+    position: absolute;
+    top: calc(120px * var(--ui-scale)); /* Mais para baixo */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    /* backdrop-filter: blur(8px); REMOVIDO */
+    /* -webkit-backdrop-filter: blur(8px); REMOVIDO */
+    color: #fff;
+    padding: calc(10px * var(--ui-scale)) calc(24px * var(--ui-scale)); /* Maior */
+    border-radius: 30px;
+    font-size: calc(14px * var(--ui-scale)); /* Fonte maior */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 20;
+}
+
+.map-loader.visible {
+    opacity: 1;
+}
+
+.map-loader::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Container para indicadores fora da tela */
+#map-indicators-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Permite clicar no mapa */
+    z-index: 5;
+    overflow: hidden;
+}
+
+.offscreen-indicator {
+    position: absolute;
+    width: calc(40px * var(--app-scale));
+    height: calc(40px * var(--app-scale));
+    border-radius: 50%;
+    background-color: var(--card-bg);
+    background-size: cover;
+    background-position: center;
+    border: 3px solid var(--accent-color);
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.3); REMOVIDO */
+    pointer-events: auto; /* Clicável */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: transform 0.1s linear; /* Rápido para acompanhar o movimento */
+}
+
+/* Controles Personalizados do Mapa */
+.map-custom-controls {
+    position: absolute;
+    top: calc(calc(60px * var(--ui-scale)) + env(safe-area-inset-top)); /* Abaixo da barra de status/telemetria */
+    right: calc(20px * var(--ui-scale));
+    display: flex;
+    flex-direction: column;
+    gap: calc(12px * var(--ui-scale));
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.map-control-btn {
+    width: max(44px, calc(48px * var(--ui-scale)));
+    height: max(44px, calc(48px * var(--ui-scale)));
+    background: rgba(var(--card-bg-rgb), 0.9); /* Translúcido */
+    /* backdrop-filter: blur(5px); REMOVIDO */
+    /* -webkit-backdrop-filter: blur(5px); REMOVIDO */
+    border: 1px solid var(--border-color);
+    border-radius: calc(14px * var(--ui-scale));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    font-size: calc(24px * var(--ui-scale));
+    font-weight: 300;
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.15); REMOVIDO */
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.map-control-btn:active {
+    transform: scale(0.92);
+    background: var(--border-color);
+}
+
+.map-control-btn img {
+    width: calc(22px * var(--ui-scale));
+    height: calc(22px * var(--ui-scale));
+    filter: var(--icon-accent-filter);
+}
+
+@keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+    70% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+}
+
+.map-control-btn.pulsing {
+    animation: pulse-ring 1.5s infinite;
+    background-color: rgba(var(--accent-rgb), 0.1);
+    border-color: var(--accent-color);
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: calc(12px * var(--ui-scale)) calc(15px * var(--ui-scale));
+    margin: 0 calc(-15px * var(--ui-scale)); /* Expande para as bordas do container */
+    position: relative;
+    overflow: hidden;
+    border-radius: calc(16px * var(--ui-scale));
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-height: calc(56px * var(--ui-scale)); /* Garante altura mínima para toque */
+}
+
+.setting-item.vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(10px * var(--ui-scale));
+    height: auto;
+}
+
+.setting-label-group {
+    display: flex;
+    align-items: center;
+    gap: calc(12px * var(--ui-scale));
+    flex: 1;
+    min-width: 0;
+}
+
+.setting-label-group img {
+    width: calc(24px * var(--ui-scale));
+    height: calc(24px * var(--ui-scale));
+    filter: var(--icon-filter);
+    flex-shrink: 0;
+    object-fit: contain;
+    display: block;
+}
+
+.setting-item:active {
+    background-color: var(--border-color);
+}
+
+/* Ripple Effect */
+span.ripple {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
+    transform: translateX(-100%);
+    animation: rippleSlide 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+body.dark-mode span.ripple {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+}
+
+@keyframes rippleSlide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.setting-item span {
+    color: var(--text-primary);
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 500;
+}
+
+.settings-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: calc(32px * var(--ui-scale));
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: none;
+    line-height: 1;
+    margin-right: calc(5px * var(--ui-scale));
+}
+
+.garage-box {
+    width: calc(360px * var(--ui-scale));
+    max-width: none;
+    background: transparent;
+    /* backdrop-filter: none; REMOVIDO */
+    /* -webkit-backdrop-filter: none; REMOVIDO */
+    border: none;
+    border-radius: 0;
+    padding: 0; /* Full bleed: remove padding interno para a foto encostar nas bordas */
+    box-shadow: none;
+    pointer-events: auto; 
+    display: flex;
+    flex-direction: column;
+    gap: calc(10px * var(--ui-scale));
+    overflow: visible; /* Permite que as sombras dos cards apareçam */
+    contain: layout style; /* OTIMIZAÇÃO: Isola layout mas permite overflow (setas/sombras) */
+    position: relative; /* Para posicionar o FAB integrado */
+    transform: translate3d(0,0,0); /* Force GPU Layer */
+    backface-visibility: hidden;
+    margin-top: calc(30px * var(--ui-scale)); /* Posicionado levemente para baixo */
+}
+
+.garage-card-frame {
+    background-color: var(--card-bg);
+    border: 4px solid var(--accent-color); /* Borda fina e chamativa */
+    border-radius: calc(24px * var(--ui-scale));
+    /* box-shadow: 0 8px 20px var(--shadow-color); REMOVIDO */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.garage-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: calc(15px * var(--ui-scale)) calc(20px * var(--ui-scale));
+    width: 100%;
+    background-color: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: calc(20px * var(--ui-scale));
+    /* box-shadow: 0 4px 10px var(--shadow-color); REMOVIDO */
+    gap: calc(15px * var(--ui-scale));
+}
+
+.profile-avatar {
+    width: calc(50px * var(--ui-scale));
+    height: calc(50px * var(--ui-scale));
+    border-radius: 50%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid var(--border-color);
+    /* box-shadow: 0 2px 5px rgba(0,0,0,0.1); REMOVIDO */
+    cursor: pointer;
+    overflow: hidden; /* Garante que a imagem não vaze */
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1;
+}
+
+.profile-avatar img.default-avatar {
+    padding: calc(10px * var(--ui-scale)); /* Diminui o SVG visualmente */
+    filter: var(--icon-accent-filter);
+}
+
+.header-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.garage-title {
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: calc(20px * var(--ui-scale)); /* Aumentado */
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    text-transform: none;
+    opacity: 1;
+    line-height: 1.2;
+}
+
+.highlight-name {
+    color: var(--accent-color);
+}
+
+.garage-subtitle {
+    color: var(--text-secondary);
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 500;
+    margin-top: calc(2px * var(--ui-scale));
+}
+
+/* Dashboard Welcome Header (Acima da Garagem) */
+.dashboard-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 0 calc(10px * var(--ui-scale));
+    margin-bottom: calc(5px * var(--ui-scale));
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.dashboard-date {
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: calc(2px * var(--ui-scale));
+}
+
+.dashboard-greeting {
+    font-size: calc(32px * var(--ui-scale)); /* Maior destaque */
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -1px;
+    line-height: 1.1;
+}
+
+.header-add-btn {
+    width: max(44px, calc(48px * var(--ui-scale)));
+    height: max(44px, calc(48px * var(--ui-scale)));
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    /* box-shadow: 0 4px 10px rgba(0,0,0,0.15); REMOVIDO */
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.header-options-btn {
+    margin-left: 0; /* Removido pois agora está num container flex */
+    width: max(44px, calc(36px * var(--ui-scale)));
+    height: max(44px, calc(36px * var(--ui-scale)));
+    border-radius: 50%;
+    background: transparent; /* Fundo transparente para ser discreto */
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.header-add-btn img {
+    width: calc(28px * var(--ui-scale));
+    height: calc(28px * var(--ui-scale));
+    filter: brightness(0) invert(1);
+}
+
+.header-options-btn img {
+    width: calc(22px * var(--ui-scale));
+    height: calc(22px * var(--ui-scale));
+    filter: var(--icon-filter);
+}
+
+.remove-avatar-btn {
+    position: absolute;
+    top: calc(-6px * var(--ui-scale));
+    right: calc(-6px * var(--ui-scale));
+    width: max(30px, calc(26px * var(--ui-scale)));
+    height: max(30px, calc(26px * var(--ui-scale)));
+    background: var(--card-bg);
+    color: #FF3B30;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    /* box-shadow: 0 2px 6px rgba(0,0,0,0.15); REMOVIDO */
+    z-index: 20;
+    border: 1px solid rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.remove-avatar-btn:active {
+    transform: scale(0.9);
+}
+
+.header-add-btn:active {
+    transform: scale(0.92);
+    filter: brightness(0.9);
+}
+
+.header-options-btn:active {
+    transform: scale(0.92);
+    background: var(--border-color);
+}
+
+/* Floating Action Button (FAB) para adicionar carro */
+.add-car-fab {
+    position: absolute;
+    bottom: calc(175px * var(--ui-scale)); /* Subiu o botão para encostar na box */
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(60px * var(--ui-scale));
+    height: calc(60px * var(--ui-scale));
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    color: white;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(32px * var(--ui-scale));
+    padding-bottom: 5px; /* Ajuste visual para subir o ícone */
+    font-weight: 300;
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.15); REMOVIDO */
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    z-index: 105; /* Acima do bottom-panel (100) */
+    -webkit-tap-highlight-color: transparent;
+    
+    /* Borda com espaço opaco (evita linha do card cruzando) */
+    border: 4px solid var(--card-bg);
+    /* box-shadow: 0 0 0 4px var(--accent-color), 0 6px 16px rgba(0,0,0,0.2); REMOVIDO */
+}
+
+.add-car-fab:active {
+    transform: translateX(-50%) scale(0.92); /* Microinteração consistente */
+    background: linear-gradient(135deg, #1E88E5, #1565C0);
+    /* box-shadow: 0 0 0 4px var(--accent-color), 0 2px 8px rgba(0,0,0,0.1); REMOVIDO */
+}
+
+.add-car-btn {
+    width: max(44px, calc(36px * var(--ui-scale)));
+    height: max(44px, calc(36px * var(--ui-scale)));
+    border-radius: 50%;
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(24px * var(--ui-scale));
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    pointer-events: auto; 
+    z-index: 10;
+}
+
+.add-car-btn:active {
+    background: var(--accent-color);
+    color: #ffffff;
+    transform: scale(0.92);
+    box-shadow: none;
+}
+
+.car-slot {
+    position: relative;
+    min-width: 100%; /* Ocupa toda a largura do carrossel */
+    height: auto;
+    padding: 0; /* Remove padding para a foto encostar na moldura */
+    overflow: visible;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: center; /* Alinha o carro ao centro ao soltar */
+    scroll-snap-stop: always; /* Bloqueia rolagem para parar um por um */
+    touch-action: pan-x pan-y; /* Habilita gestos em toda a área */
+    contain: content; /* OTIMIZAÇÃO: Isola renderização */
+    backface-visibility: hidden;
+    transform: translate3d(0,0,0); /* Força criação de camada na GPU */
+    /* content-visibility: auto; Removido */
+}
+
+.car-slot-content {
+    position: relative;
+    width: 100%;
+    height: auto;
+    background: transparent; /* Fundo transparente para separar as caixas */
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: visible;
+    box-shadow: none;
+    gap: calc(15px * var(--ui-scale)); /* Espaço entre a caixa da foto e a caixa de detalhes */
+
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 2; /* Fica acima das ações */
+    touch-action: pan-x pan-y; /* Permite scroll nativo em ambas direções */
+    /* will-change: transform; Removido */
+}
+
+.top-action-btn img {
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+    filter: var(--icon-filter);
+    opacity: 0.7;
+}
+
+.swipe-action-btn img {
+    width: calc(24px * var(--ui-scale));
+    height: calc(24px * var(--ui-scale));
+    filter: brightness(0) invert(1);
+}
+
+.car-placeholder-icon {
+    font-size: calc(40px * var(--ui-scale));
+    filter: grayscale(1) opacity(0.5);
+}
+
+.car-details {
+    padding: calc(20px * var(--ui-scale)) calc(24px * var(--ui-scale));
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    gap: calc(15px * var(--ui-scale));
+    border-radius: calc(24px * var(--ui-scale)); /* Caixa arredondada */
+    border: 1px solid var(--border-color);
+    /* box-shadow: 0 8px 20px var(--shadow-color); REMOVIDO */
+}
+
+.car-name {
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    font-size: calc(14px * var(--ui-scale));
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    line-height: 1;
+    position: relative;
+    margin-bottom: calc(2px * var(--ui-scale));
+    margin-left: 0;
+    z-index: 6;
+    background: rgba(0, 0, 0, 0.5);
+    /* OTIMIZAÇÃO: Blur removido para performance */
+    padding: calc(6px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    border-radius: calc(8px * var(--ui-scale));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* box-shadow: 0 2px 10px rgba(0,0,0,0.2); REMOVIDO */
+}
+
+.car-name-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: calc(30px * var(--ui-scale)) calc(12px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
+    z-index: 5;
+    pointer-events: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: calc(8px * var(--ui-scale));
+}
+
+.car-card-actions {
+    display: flex;
+    gap: calc(12px * var(--ui-scale));
+    width: 100%;
+}
+
+.card-action-btn {
+    flex: 1; /* Botões ocupam largura igual */
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--ui-scale));
+    color: var(--accent-color);
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 700;
+    text-shadow: 0 0 0.5px currentColor; /* Reforça a cor da letra */
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.25), rgba(var(--accent-rgb), 0.15));
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+    padding: calc(12px * var(--ui-scale)) calc(16px * var(--ui-scale));
+    border-radius: calc(20px * var(--ui-scale));
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: none;
+}
+
+.card-action-btn:active {
+    background: rgba(var(--accent-rgb), 0.25);
+    transform: scale(0.96); /* Feedback tátil sutil */
+}
+
+.card-action-btn img {
+    width: calc(14px * var(--ui-scale));
+    height: calc(14px * var(--ui-scale));
+    filter: var(--icon-accent-filter);
+}
+
+/* Animações de Lista */
+@keyframes slideIn {
+    from { opacity: 0; transform: translate3d(0, 30px, 0) scale(0.96); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes slideOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.9); } 
+}
+
+.car-plate-display {
+    position: relative;
+    color: #000;
+    font-family: 'Inter', sans-serif;
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 700;
+    background: linear-gradient(to bottom, #003399 14px, #fff 14px);
+    padding: calc(20px * var(--ui-scale)) calc(10.5px * var(--ui-scale)) calc(2px * var(--ui-scale));
+    border-radius: 4px;
+    border: 2px solid #000;
+    margin-bottom: -4px;
+    margin-right: -6px;
+    /* box-shadow: 0 2px 6px rgba(0,0,0,0.3); REMOVIDO */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: calc(90px * var(--ui-scale));
+    text-align: center;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.car-plate-display:active {
+    transform: scale(0.95);
+}
+
+.car-plate-display::before {
+    content: 'BRASIL';
+    position: absolute;
+    top: 3px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: #fff;
+    font-size: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.car-plate-display::after {
+    content: '';
+    position: absolute;
+    top: 0.5px;
+    right: 3px;
+    width: 18px;
+    height: 13px;
+    background-image: url('img/brasil_flag.svg');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: none;
+    border-radius: 2px;
+    box-shadow: none;
+}
+
+.car-plate-display.mini {
+    font-size: calc(10px * var(--ui-scale)); /* Aumentado levemente */
+    background: linear-gradient(to bottom, #003399 10px, #fff 10px);
+    padding: 12px 7px 1px;
+    min-width: 58px;
+    border-width: 1.5px;
+    margin: 0;
+    /* box-shadow: 0 1px 3px rgba(0,0,0,0.15); REMOVIDO */
+    cursor: default;
+    width: fit-content;
+}
+
+.car-plate-display.mini::before {
+    font-size: 4.5px;
+    top: 1.5px;
+    letter-spacing: 0.3px;
+}
+
+.car-plate-display.mini::after {
+    width: 10px;
+    height: 6px;
+    top: 2px;
+    right: 2px;
+}
+
+.remove-car-btn, .edit-car-btn {
+    position: absolute;
+    top: calc(15px * var(--ui-scale));
+    width: max(44px, calc(40px * var(--ui-scale)));
+    height: max(44px, calc(40px * var(--ui-scale)));
+    background: rgba(0, 0, 0, 0.4);
+    /* OTIMIZAÇÃO: Blur removido */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 20;
+}
+
+.remove-car-btn { right: calc(15px * var(--ui-scale)); }
+.edit-car-btn { right: calc(65px * var(--ui-scale)); }
+
+.remove-car-btn:active, .edit-car-btn:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.remove-car-btn img, .edit-car-btn img {
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+}
+
+.car-slot.fade-in {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.car-slot.fade-out {
+    /* animation: slideOut 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); REMOVIDO */
+    pointer-events: none; /* Evita cliques durante a saída */
+}
+
+.car-image-container {
+    position: relative;
+    width: 100%;
+    height: 40vh; /* Altura responsiva: 40% da tela */
+    max-height: 450px; /* Limite para tablets não ficarem exagerados */
+    min-height: 260px; /* Limite para celulares pequenos não sumirem */
+    background-color: var(--placeholder-bg);
+    overflow: hidden;
+    touch-action: pan-x pan-y; /* Permite scroll ao tocar no container da foto */
+    border-radius: 0; /* Remove borda individual */
+    border: none;
+    box-shadow: none;
+}
+
+.car-photo-display {
+    position: absolute;
+    width: 100%;
+    height: 100%; /* Preenche todo o slot */
+    object-fit: cover; /* Volta para cover para preencher o card bonito */
+    background-color: var(--placeholder-bg);
+    top: 0;
+    left: 0;
+    z-index: 1;
+    opacity: 0; /* Começa invisível para lazy load */
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    touch-action: pan-x pan-y; /* Permite scroll ao tocar na foto */
+    /* will-change: transform; Removido */
+}
+
+.car-photo-display.loaded {
+    opacity: 1;
+}
+
+#garage-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Centraliza o card verticalmente */
+    padding-bottom: 0;
+    pointer-events: auto;
+}
+
+#garage-list {
+    display: flex;
+    flex-direction: row; /* Empilha para a direita */
+    overflow-x: scroll; /* Permite scroll horizontal */
+    scroll-snap-type: x mandatory; /* Força parada no item */
+    scroll-behavior: auto; /* Remove delay do snap, JS controla animação dos botões */
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    scrollbar-width: none; /* Firefox */
+    touch-action: pan-x pan-y;
+    /* will-change: scroll-position; Removido */
+}
+
+#garage-list::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.garage-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(10px * var(--ui-scale)) calc(20px * var(--ui-scale)) calc(20px * var(--ui-scale));
+    background: var(--card-bg);
+    gap: calc(12px * var(--ui-scale));
+}
+@keyframes popIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Bottom Panel (Uber Style) */
+#bottom-panel {
+    position: absolute;
+    bottom: max(calc(59px * var(--ui-scale)), env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translate3d(-50%, 0, 0);
+    width: calc(360px * var(--ui-scale));
+    max-width: none;
+    background-color: var(--bottom-panel-bg);
+    /* OTIMIZAÇÃO: Garantir que não haja filtros */
+    border: 1px solid var(--border-color);
+    border-radius: calc(60px * var(--ui-scale));
+    padding: calc(14px * var(--ui-scale)) calc(28px * var(--ui-scale)) calc(13px * var(--ui-scale));
+    /* box-shadow: 0 10px 30px var(--shadow-color); REMOVIDO */
+    display: flex;
+    flex-direction: column;
+    gap: calc(10px * var(--ui-scale));
+    pointer-events: auto;
+    z-index: 100; /* Garante que os widgets fiquem acima do mapa e listas */
+}
+
+#bottom-panel-empty {
+    position: absolute;
+    bottom: max(calc(59px * var(--ui-scale)), env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translate3d(-50%, 0, 0);
+    width: auto; /* Largura automática para ficar pequeno */
+    min-width: calc(200px * var(--ui-scale));
+    background-color: var(--bottom-panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: calc(60px * var(--ui-scale));
+    padding: calc(14px * var(--ui-scale)) calc(30px * var(--ui-scale)) calc(13px * var(--ui-scale)); /* Padding lateral maior para centralizar visualmente */
+    /* box-shadow: 0 10px 30px var(--shadow-color); REMOVIDO */
+    display: flex;
+    flex-direction: column;
+    gap: calc(10px * var(--ui-scale));
+    pointer-events: auto;
+    z-index: 100;
+}
+
+.widgets-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    gap: calc(35px * var(--ui-scale)); /* Gap fixo que será escalado pelo pai (#bottom-panel) */
+    align-items: flex-start;
+    pointer-events: auto;
+}
+
+.widget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    opacity: 0.5;
+    transition: opacity 0.2s ease, transform 0.2s ease-out;
+    transform: translateZ(0); /* Força criação de camada na GPU */
+    position: relative;
+}
+
+.widget.active {
+    opacity: 1;
+    transform: translate3d(0, calc(-12px * var(--ui-scale)), 0) scale(1.1); /* Movimento mais pronunciado e escala maior */
+}
+
+.widget:active {
+    opacity: 1;
+    transform: scale(0.92); /* Feedback tátil claro */
+    transition: transform 0.1s ease;
+}
+
+.widget.active:active {
+    transform: translate3d(0, calc(-15px * var(--ui-scale)), 0) scale(0.95);
+}
+
+.widget-icon-box {
+    width: calc(42px * var(--ui-scale));
+    height: calc(42px * var(--ui-scale));
+    background: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-out;
+}
+
+.widget-icon-box img {
+    width: 50%;
+    height: 50%;
+    object-fit: contain;
+    filter: invert(0.6); /* Cinza */
+    transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.widget.active .widget-icon-box {
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+}
+
+.widget.active .widget-icon-box img {
+    /* Azul vibrante (#2196F3) para estado ativo. Filtro calculado para transformar preto em azul. */
+    filter: var(--icon-accent-filter);
+    transform: scale(1.25); /* Escala maior para destaque */
+    /* filter: var(--icon-accent-filter) drop-shadow(0 4px 8px rgba(var(--accent-rgb), 0.3)); Sombra removida */
+}
+
+.widget-label {
+    color: #8E8E93;
+    font-family: 'Inter', sans-serif;
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate3d(-50%, 0, 0); /* OTIMIZAÇÃO: Remove deslocamento extra */
+    margin-top: calc(2px * var(--ui-scale)); /* Mais próximo do ícone */
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#undo-message {
+    pointer-events: auto;
+}
+
+.widget.active .widget-label {
+    color: var(--accent-color);
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0); /* Posição final alinhada */
+    font-weight: 700;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* Mais escuro e sólido para performance */
+    z-index: 2000; /* Acima de tudo, inclusive da tela vazia (1001) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden; /* Garante que não bloqueie nada quando fechado */
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.visible { /* Move modal para cima, mais perto do bottom panel */
+    top: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-box {
+    width: calc(320px * var(--ui-scale));
+    max-width: none;
+    background-color: #1E1E1E; /* Surface Color Material Design */
+    border: none;
+    border-radius: calc(28px * var(--ui-scale)); /* Arredondamento padrão Material 3 */
+    padding: calc(32px * var(--ui-scale)) calc(24px * var(--ui-scale));
+    transform: scale(0.92) translate3d(0, calc(15px * var(--ui-scale)), 0); /* Começa um pouco menor e mais baixo */
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; /* Easing premium */
+    /* box-shadow: 0 15px 30px rgba(0,0,0,0.8); REMOVIDO */
+    display: flex;
+    flex-direction: column;
+    gap: calc(24px * var(--ui-scale));
+}
+
+.modal-overlay.visible .modal-box {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 1;
+}
+
+/* Action Sheet Styles (Menu Inferior) */
+.action-sheet-overlay {
+    align-items: flex-end; /* Alinha no fundo */
+    justify-content: center; /* Centraliza no PC */
+}
+
+.action-sheet-overlay.visible {
+    top: 0; /* Corrige posição (ignora o deslocamento de 25% dos outros modais) */
+}
+
+.action-sheet-box {
+    width: calc(360px * var(--ui-scale));
+    display: flex;
+    flex-direction: column;
+    max-width: none; /* Visual de cartão flutuante */
+    border-radius: calc(24px * var(--ui-scale)); /* Arredondado completo */
+    margin-bottom: calc(160px * var(--ui-scale)); /* Afastado para não cobrir os widgets */
+    transform: translate3d(0, 120%, 0); /* Começa escondido embaixo */
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); /* Slide up suave */
+}
+
+.modal-overlay.visible .action-sheet-box {
+    transform: translate3d(0, 0, 0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: calc(8px * var(--ui-scale));
+}
+
+.modal-header.centered-header {
+    position: relative;
+    justify-content: center;
+    width: 100%;
+}
+
+.close-modal-btn.absolute-close {
+    position: absolute;
+    right: calc(-8px * var(--ui-scale));
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 50;
+    width: max(44px, calc(44px * var(--ui-scale)));
+    height: max(44px, calc(44px * var(--ui-scale)));
+}
+
+.modal-title {
+    color: #fff; /* Modais ainda escuros para contraste ou podem ser mudados */
+    font-family: 'Inter', sans-serif;
+    font-size: calc(22px * var(--ui-scale)); /* Título maior estilo App */
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.close-modal-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    width: max(44px, calc(32px * var(--ui-scale)));
+    height: max(44px, calc(32px * var(--ui-scale)));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(20px * var(--ui-scale));
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.close-modal-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: calc(16px * var(--ui-scale));
+}
+
+.modal-input {
+    width: 100%;
+    background: #2C2C2C; /* Surface Container High */
+    border: none;
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); /* Sombra inicial */
+    border-bottom: 2px solid #444; /* Indicador inativo */
+    border-radius: calc(12px * var(--ui-scale)) calc(12px * var(--ui-scale)) calc(4px * var(--ui-scale)) calc(4px * var(--ui-scale)); /* Estilo Filled Input */
+    padding: calc(16px * var(--ui-scale));
+    color: #E0E0E0;
+    font-size: calc(16px * var(--ui-scale));
+    outline: none;
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+    height: calc(56px * var(--ui-scale));
+}
+
+.plate-type-container {
+    width: 100%;
+    margin: calc(15px * var(--ui-scale)) 0 calc(20px * var(--ui-scale));
+}
+
+.plate-type-title {
+    display: block;
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 600;
+    color: #888;
+    margin-bottom: calc(10px * var(--ui-scale));
+    margin-left: calc(4px * var(--ui-scale));
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.plate-type-group {
+    display: flex;
+    gap: calc(12px * var(--ui-scale));
+    width: 100%;
+}
+
+.radio-label {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+    margin: 0;
+    display: block;
+}
+
+.radio-label input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.radio-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(14px * var(--ui-scale));
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: calc(12px * var(--ui-scale));
+    color: #999;
+    font-size: calc(14px * var(--ui-scale));
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+    width: 100%;
+}
+
+.radio-label input:checked ~ .radio-text {
+    background: rgba(var(--accent-rgb), 0.15);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    font-weight: 600;
+    /* box-shadow: 0 0 0 1px var(--accent-color); REMOVIDO */
+}
+
+.input-group {
+    position: relative;
+    width: 100%;
+    z-index: 1; /* Nível padrão de empilhamento */
+}
+
+.input-group:focus-within {
+    z-index: 201; /* Traz para frente de tudo quando o usuário toca neste campo */
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: calc(200px * var(--ui-scale)); 
+    overflow-y: scroll;
+    background: rgba(30, 30, 30, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
+    border-radius: 0 0 calc(12px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    z-index: 200;
+    display: none;
+    /* box-shadow: 0 10px 20px rgba(0,0,0,0.5); REMOVIDO */
+}
+
+.suggestions-list.visible {
+    display: block;
+}
+
+.suggestion-item {
+    padding: calc(12px * var(--ui-scale)) calc(16px * var(--ui-scale));
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: calc(15px * var(--ui-scale));
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:active {
+    background-color: rgba(var(--accent-rgb), 0.2);
+}
+
+.modal-input:focus {
+    background: #333;
+    box-shadow: none;
+    border-bottom-color: var(--accent-color); /* Highlight na base */
+    transform: scale(1.01); /* Leve zoom ao focar */
+}
+
+.clear-input-btn {
+    position: absolute;
+    right: calc(12px * var(--ui-scale));
+    top: 50%;
+    transform: translate3d(0, -50%, 0);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: calc(20px * var(--ui-scale));
+    cursor: pointer;
+    display: none;
+    width: calc(24px * var(--ui-scale));
+    height: calc(24px * var(--ui-scale));
+    line-height: calc(24px * var(--ui-scale));
+    text-align: center;
+}
+
+.clear-input-btn.visible {
+    display: block;
+}
+
+.input-loader {
+    position: absolute;
+    right: calc(12px * var(--ui-scale));
+    top: 50%;
+    transform: translate3d(0, -50%, 0);
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.input-loader.visible {
+    display: block;
+}
+
+.input-alert-icon {
+    position: absolute;
+    right: calc(40px * var(--ui-scale)); /* Espaço para o botão clear se houver */
+    top: 50%;
+    transform: translate3d(0, -50%, 0);
+    color: #ff4444;
+    font-weight: bold;
+    font-size: calc(18px * var(--ui-scale));
+    display: none;
+    pointer-events: none;
+}
+
+/* Ajuste se não tiver botão clear */
+.input-group:not(:has(.clear-input-btn)) .input-alert-icon {
+    right: calc(12px * var(--ui-scale));
+}
+
+.text-link-btn {
+    color: #ccc;
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    padding: calc(12px * var(--ui-scale)) calc(16px * var(--ui-scale));
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: calc(12px * var(--ui-scale));
+    transition: all 0.2s;
+    margin: calc(5px * var(--ui-scale)) 0 calc(15px * var(--ui-scale));
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(8px * var(--ui-scale));
+}
+
+.text-link-btn img {
+    width: calc(16px * var(--ui-scale));
+    height: calc(16px * var(--ui-scale));
+    opacity: 0.8;
+    filter: invert(1);
+}
+
+.text-link-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+    transform: scale(0.98);
+}
+
+.modal-input.input-error {
+    border-color: #ff4444;
+    /* animation: shake 0.5s; REMOVIDO */
+    padding-right: calc(40px * var(--ui-scale)); /* Espaço para o ícone */
+}
+
+.char-counter {
+    position: absolute;
+    right: calc(12px * var(--ui-scale));
+    bottom: calc(4px * var(--ui-scale));
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 600;
+    color: #555;
+    pointer-events: none;
+    transition: color 0.2s;
+}
+
+.char-counter.warning { color: #FFD60A; }
+.char-counter.limit { color: #FF453A; }
+
+.modal-input.input-error ~ .input-alert-icon {
+    display: block;
+}
+
+/* Validation Feedback Styles */
+.validation-feedback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: calc(8px * var(--ui-scale));
+    margin-bottom: 0;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.validation-feedback.visible {
+    opacity: 1;
+    max-height: calc(40px * var(--ui-scale)); /* Altura suficiente para uma linha */
+    margin-bottom: calc(12px * var(--ui-scale));
+}
+
+.validation-item {
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--ui-scale));
+    transition: color 0.2s;
+}
+
+.validation-item .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(16px * var(--ui-scale));
+    height: calc(16px * var(--ui-scale));
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: #1E1E1E; /* Cor do ícone interno */
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 900;
+    transition: all 0.2s;
+}
+
+.validation-item.valid { color: #34C759; }
+.validation-item.valid .icon { background: #34C759; }
+.validation-item.valid .icon::before { content: '✓'; }
+
+.validation-item.invalid { color: #FF3B30; }
+.validation-item.invalid .icon { background: #FF3B30; }
+.validation-item.invalid .icon::before { content: '✕'; }
+.validation-item:not(.valid):not(.invalid) .icon::before { content: ''; } /* Estado neutro sem ícone */
+
+@keyframes shake {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    10%, 30%, 50%, 70%, 90% { transform: translate3d(-5px, 0, 0); }
+    20%, 40%, 60%, 80% { transform: translate3d(5px, 0, 0); }
+}
+
+.modal-action-btn {
+    width: 100%;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 100px; /* Pill Shape (Estilo Nativo) */
+    min-height: calc(56px * var(--ui-scale));
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: calc(16px * var(--ui-scale));
+    cursor: pointer;
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.1); REMOVIDO */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease-out, background-color 0.2s;
+    pointer-events: auto;
+}
+
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+    animation: spin 1s linear infinite;
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal-action-btn.loading .spinner {
+    display: block;
+}
+
+.modal-action-btn.loading .button-text {
+    display: none;
+}
+
+.modal-action-btn:active {
+    transform: scale(0.96);
+    filter: brightness(1.1); /* Feedback visual de clique */
+}
+
+.modal-action-btn.danger-btn {
+    background-color: #ff4444;
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.1); REMOVIDO */
+}
+
+.modal-action-btn.disabled {
+    background-color: #333;
+    color: #555;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+    transform: none;
+}
+
+.modal-hint {
+    color: #eee;
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 500;
+    text-align: center;
+    margin-top: -5px;
+    margin-bottom: calc(15px * var(--ui-scale));
+}
+
+@keyframes shake-modal {
+    0%, 100% { transform: scale(1) translate3d(0, 0, 0); }
+    10%, 30%, 50%, 70%, 90% { transform: scale(1) translate3d(-5px, 0, 0); }
+    20%, 40%, 60%, 80% { transform: scale(1) translate3d(5px, 0, 0); }
+}
+
+.modal-box.shake-modal {
+    animation: shake-modal 0.5s;
+}
+
+@keyframes plate-flash {
+    0% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.5); border-color: #fff; }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+.flash-effect {
+    animation: plate-flash 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Photo Upload Styles */
+.photo-upload-container {
+    width: 100%;
+    height: calc(180px * var(--ui-scale));
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: calc(16px * var(--ui-scale));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.re-crop-btn {
+    position: absolute;
+    bottom: calc(10px * var(--ui-scale));
+    right: calc(10px * var(--ui-scale));
+    width: max(44px, calc(36px * var(--ui-scale)));
+    height: max(44px, calc(36px * var(--ui-scale)));
+    background: rgba(var(--accent-rgb), 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    /* box-shadow: 0 2px 8px rgba(0,0,0,0.5); REMOVIDO */
+    transition: transform 0.2s;
+}
+
+.re-crop-btn:active {
+    transform: scale(0.9);
+}
+
+.re-crop-btn img {
+    width: calc(18px * var(--ui-scale));
+    height: calc(18px * var(--ui-scale));
+    filter: brightness(0) invert(1);
+}
+
+.photo-upload-container.error {
+    border-color: #ff4444;
+    /* animation: shake 0.5s; REMOVIDO */
+}
+
+.photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(10px * var(--ui-scale));
+    color: #888;
+    font-size: calc(14px * var(--ui-scale));
+    pointer-events: none;
+}
+
+.camera-icon {
+    width: calc(48px * var(--ui-scale));
+    height: calc(48px * var(--ui-scale));
+    opacity: 0.7;
+    filter: invert(1); /* Garante que o ícone fique branco */
+}
+
+#car-photo-preview {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.car-slot:hover {
+    transform: none; /* Remove zoom ao passar o mouse */
+}
+
+/* Desativa hover scale quando está sendo swiped */
+.car-slot.swiped .car-slot-content {
+    transform: none !important;
+}
+
+/* Setas de Navegação */
+.nav-arrow {
+    position: absolute !important; /* Força posição absoluta nos cantos */
+    top: 50%;
+    transform: none;
+    transform: translateY(-50%);
+    background: var(--nav-arrow-bg);
+    backdrop-filter: none;
+    border: none;
+    color: var(--nav-arrow-color);
+    border-radius: 50%;
+    width: max(44px, calc(44px * var(--ui-scale))); /* Largura FIXA para simetria matemática */
+    min-width: max(44px, calc(44px * var(--ui-scale)));
+    min-height: max(44px, calc(44px * var(--ui-scale)));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    font-size: calc(24px * var(--ui-scale));
+    user-select: none;
+    transition: transform 0.2s ease-out, background-color 0.2s;
+    flex-shrink: 0; /* Impede que a seta encolha */
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.3); REMOVIDO */
+}
+
+@keyframes pulse-arrow {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+.nav-arrow.pulsing {
+    animation: pulse-arrow 2s infinite ease-in-out;
+}
+
+.nav-arrow.left {
+    left: calc(12px * var(--ui-scale));
+}
+
+.nav-arrow.right {
+    right: calc(12px * var(--ui-scale));
+}
+
+.nav-arrow svg {
+    width: calc(28px * var(--ui-scale));
+    height: calc(28px * var(--ui-scale));
+    stroke-width: 3px;
+}
+
+.nav-arrow:active {
+    transform: scale(0.9);
+    background: rgba(80, 80, 80, 1);
+}
+
+
+/* Pagination Indicators */
+.settings-btn svg {
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+    stroke: var(--text-secondary);
+    stroke-width: 2.5px;
+}
+
+.carousel-indicators {
+    display: flex;
+    align-items: center;
+    gap: calc(6px * var(--ui-scale)); /* Gap menor para caber mais */
+    margin: calc(10px * var(--ui-scale)) auto calc(5px * var(--ui-scale)); /* Centraliza o container */
+    pointer-events: auto;
+    
+    /* Lógica de Scroll e Limites */
+    width: max-content;
+    max-width: calc(160px * var(--ui-scale)); /* Largura máxima fixa */
+    overflow-x: scroll;
+    padding: calc(4px * var(--ui-scale)) calc(12px * var(--ui-scale)); /* Espaço para o fade não cortar */
+    position: relative;
+    
+    /* Esconde Scrollbar */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    
+    /* Efeito de Fade nas bordas */
+    mask-image: linear-gradient(90deg, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+}
+
+.carousel-indicators::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.carousel-dot.active {
+    background: var(--accent-color);
+    transform: scale(1.2);
+    box-shadow: none;
+}
+
+.carousel-dot {
+    flex-shrink: 0; /* Impede que as bolinhas amassem */
+    width: calc(6px * var(--ui-scale));
+    height: calc(6px * var(--ui-scale));
+    border-radius: 50%;
+    background: #D1D1D6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.car-slot .car-name {
+    /* Reset position for new layout */
+    position: static;
+}
+
+/* Crop Modal Specifics */
+#crop-modal .modal-box {
+    width: calc(360px * var(--ui-scale));
+    max-width: none;
+    background-color: #121212; /* Fundo escuro para foco na imagem */
+    padding: calc(24px * var(--ui-scale));
+}
+
+/* Crop Modal Styles */
+.crop-viewport {
+    width: 100%;
+    height: 50vh; /* Altura dinâmica: 50% da tela */
+    min-height: 300px;
+    max-height: 550px;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border-radius: calc(16px * var(--ui-scale));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    touch-action: none; /* Crucial para arrastar no mobile */
+    margin-bottom: calc(10px * var(--ui-scale));
+}
+
+#crop-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+    /* transform será controlado via JS */
+    max-width: none;
+    pointer-events: none;
+}
+
+#crop-image {
+    display: block;
+    max-width: 100%; /* Requisito do Cropper.js */
+    max-height: 100%;
+}
+
+/* Toggle Switch CSS */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: calc(50px * var(--ui-scale));
+  height: calc(28px * var(--ui-scale));
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3a3a3c;
+  transition: .4s;
+  border-radius: calc(34px * var(--ui-scale));
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: calc(24px * var(--ui-scale));
+  width: calc(24px * var(--ui-scale));
+  left: calc(2px * var(--ui-scale));
+  bottom: calc(2px * var(--ui-scale));
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(calc(22px * var(--ui-scale)));
+}
+
+/* Toast Notification (Feedback de Sucesso) */
+.toast {
+    position: absolute;
+    top: calc(20px * var(--ui-scale));
+    left: 50%; 
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: white;
+    padding: calc(12px * var(--ui-scale)) calc(24px * var(--ui-scale));
+    border-radius: calc(50px * var(--ui-scale));
+    display: flex;
+    align-items: center;
+    gap: calc(12px * var(--ui-scale));
+    /* box-shadow: 0 10px 30px rgba(0,0,0,0.2); REMOVIDO */
+    z-index: 1000;
+    opacity: 0;
+    /* transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease; REMOVIDO */
+    display: none; /* REMOVIDO: Toast desativado */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    width: max-content;
+    max-width: 90%;
+    font-weight: 600;
+    font-size: calc(14px * var(--ui-scale));
+    /* will-change: transform, opacity; Removido */
+}
+
+.toast.visible {
+    /* transform: translateX(-50%) translateY(0); REMOVIDO */
+    /* opacity: 1; REMOVIDO */
+}
+
+.toast-icon {
+    color: #4CAF50; /* Verde Sucesso */
+    font-weight: 900;
+    font-size: calc(16px * var(--ui-scale));
+}
+
+.toast-action-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: calc(6px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: calc(10px * var(--ui-scale));
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.toast-action-btn:active {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Grade de Recorte (Rule of Thirds) */
+.crop-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; 
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    display: none; /* Oculta grade manual, Cropper.js usa a própria */
+}
+
+.crop-grid::before, .crop-grid::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Linhas Verticais */
+.crop-grid::before {
+    top: 0;
+    bottom: 0;
+    left: 33.33%;
+    width: 33.33%;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+}
+
+/* Linhas Horizontais */
+.crop-grid::after {
+    left: 0;
+    right: 0;
+    top: 33.33%;
+    height: 33.33%;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+}
+
+.crop-controls {
+    display: flex;
+    align-items: center;
+    gap: calc(15px * var(--ui-scale));
+    padding: calc(5px * var(--ui-scale)) 0 calc(15px * var(--ui-scale));
+}
+
+#crop-zoom-slider, #edit-zoom-slider {
+    flex: 1;
+    accent-color: var(--accent-color);
+    height: 4px; /* Altura visual do trilho */
+    min-height: 44px; /* Altura do alvo de toque (Acessibilidade) */
+}
+
+.crop-toolbar {
+    display: flex;
+    justify-content: center;
+    gap: calc(20px * var(--ui-scale));
+    margin-bottom: calc(20px * var(--ui-scale));
+}
+
+.tool-btn {
+    width: max(44px, calc(44px * var(--ui-scale)));
+    height: max(44px, calc(44px * var(--ui-scale)));
+    border-radius: calc(12px * var(--ui-scale)); /* Botões quadrados arredondados */
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: calc(18px * var(--ui-scale));
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tool-btn:active {
+    background: var(--accent-color);
+    transform: scale(0.9);
+}
+
+.aspect-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    padding: calc(6px * var(--ui-scale)) calc(16px * var(--ui-scale));
+    border-radius: calc(20px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.aspect-btn.active {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.big-icon-btn {
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(8px * var(--ui-scale));
+    padding: calc(12px * var(--ui-scale));
+}
+
+.big-icon-btn span {
+    font-size: calc(24px * var(--ui-scale));
+    font-weight: bold;
+}
+
+.change-photo-btn-overlay {
+    position: absolute;
+    top: calc(10px * var(--ui-scale));
+    right: calc(10px * var(--ui-scale));
+    background: #000;
+    /* backdrop-filter: blur(4px); REMOVIDO: Performance */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: calc(20px * var(--ui-scale));
+    padding: calc(6px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    display: flex;
+    align-items: center;
+    gap: calc(6px * var(--ui-scale));
+    color: #fff;
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 50; /* Acima do cropper */
+    transition: background 0.2s;
+}
+
+.change-photo-btn-overlay:active {
+    background: rgba(var(--accent-rgb), 0.8);
+}
+
+.change-photo-btn-overlay img {
+    width: calc(16px * var(--ui-scale));
+    height: calc(16px * var(--ui-scale));
+    filter: invert(1);
+}
+
+/* Customização do Cropper.js para visual mais bonito */
+.cropper-view-box {
+    outline: 1px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+}
+
+.cropper-dashed {
+    border: 0 dashed #eee;
+    opacity: 0.5;
+}
+
+.cropper-line {
+    background-color: rgba(33, 150, 243, 0.3);
+}
+
+.cropper-point {
+    background-color: #fff;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    opacity: 1;
+}
+
+.cropper-modal {
+    background-color: rgba(0, 0, 0, 0.85);
+    opacity: 0.85;
+}
+
+/* Theme Selector Styles */
+.theme-selector {
+    display: flex;
+    gap: calc(15px * var(--ui-scale));
+    margin-top: calc(10px * var(--ui-scale));
+}
+
+.theme-option {
+    width: max(40px, calc(32px * var(--ui-scale)));
+    height: max(40px, calc(32px * var(--ui-scale)));
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.theme-option.active {
+    transform: scale(1.1);
+    border-color: var(--text-primary);
+}
+
+/* Botão de Modo Manual Destacado */
+#manual-mode-btn {
+    background: transparent;
+    border: 2px solid var(--accent-color);
+    color: var(--accent-color);
+    font-weight: 700;
+    padding: calc(16px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+    margin: calc(15px * var(--ui-scale)) 0 calc(25px * var(--ui-scale));
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(10px * var(--ui-scale));
+    cursor: pointer;
+    transition: transform 0.15s ease-out, border-color 0.2s, opacity 0.2s;
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.05); REMOVIDO */
+    text-transform: uppercase;
+    font-size: calc(13px * var(--ui-scale));
+    letter-spacing: 0.5px;
+}
+
+#manual-mode-btn:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+}
+
+#manual-mode-btn img {
+    filter: var(--icon-accent-filter);
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+}
+
+/* Marcador de Usuário (Bolinha Azul) */
+.user-location-marker {
+    width: calc(44px * var(--ui-scale));
+    height: calc(44px * var(--ui-scale));
+    background-color: #007AFF;
+    background-size: cover;
+    background-position: center;
+    border: 3px solid #FFFFFF;
+    border-radius: 50%;
+    /* box-shadow: 0 4px 15px rgba(0,0,0,0.3); REMOVIDO */
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+.user-location-marker::after {
+    content: '';
+    position: absolute;
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border-radius: 50%;
+    border: 2px solid #007AFF;
+    animation: radar-ping 2s infinite;
+    opacity: 0;
+}
+
+@keyframes radar-ping {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+.settings-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* Espaçamento controlado pelas margens internas */
+    align-items: center; /* Centraliza os containers internos */
+}
+
+.map-ui-box {
+    width: 100%;
+    /* Altura será definida via JS para ancoragem correta */
+    pointer-events: none; /* Permite clicar no mapa atrás */
+    position: relative;
+}
+
+.map-ui-box > * {
+    pointer-events: auto; /* Reabilita cliques nos controles */
+}
+
+/* Skeleton Loader Styles */
+.skeleton-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-color);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: env(safe-area-inset-top);
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skeleton-header {
+    width: 90%;
+    height: 80px;
+    background: var(--card-bg);
+    border-radius: 20px;
+    margin-top: 20px;
+    opacity: 0.5;
+}
+
+.skeleton-card {
+    width: 90%;
+    height: 45vh;
+    background: var(--card-bg);
+    border-radius: 24px;
+    margin-top: 20px;
+    opacity: 0.5;
+}
+
+.skeleton-bottom {
+    position: absolute;
+    bottom: 40px;
+    width: 88%;
+    height: 80px;
+    background: var(--card-bg);
+    border-radius: 60px;
+    opacity: 0.5;
+}
+
+.skeleton-pulse {
+    animation: skeletonPulse 1.5s infinite ease-in-out;
+} 
+
+@keyframes skeletonPulse {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+    100% { opacity: 0.3; }
+}
+
+/* Pulse Animation for Primary Actions */
+.pulse-button {
+    animation: pulse-blue 2s infinite;
+}
+
+@keyframes pulse-blue {
+    0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 122, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); }
+}
+
+/* Tablet Optimization (Font Sizes & Elements) */
+@media (min-width: 768px) {
+    .garage-title { font-size: calc(24px * var(--ui-scale)); }
+    .garage-subtitle { font-size: calc(16px * var(--ui-scale)); }
+    
+    .car-name { 
+        font-size: calc(18px * var(--ui-scale)); 
+        padding: calc(8px * var(--ui-scale)) calc(16px * var(--ui-scale)); 
+    }
+    
+    .car-plate-display { 
+        font-size: calc(20px * var(--ui-scale)); 
+        padding: calc(25px * var(--ui-scale)) calc(14px * var(--ui-scale)) calc(4px * var(--ui-scale)); 
+        min-width: calc(110px * var(--ui-scale));
+    }
+    .car-plate-display::before { font-size: calc(10px * var(--ui-scale)); top: calc(4px * var(--ui-scale)); }
+    .car-plate-display::after { width: calc(22px * var(--ui-scale)); height: calc(16px * var(--ui-scale)); top: calc(2px * var(--ui-scale)); right: calc(4px * var(--ui-scale)); }
+
+    .widget-label { font-size: calc(14px * var(--ui-scale)); }
+    
+    .modal-title { font-size: calc(24px * var(--ui-scale)); }
+    .modal-input { font-size: calc(18px * var(--ui-scale)); height: calc(60px * var(--ui-scale)); }
+    .modal-action-btn { font-size: calc(18px * var(--ui-scale)); min-height: calc(60px * var(--ui-scale)); }
+    
+    .setting-item span { font-size: calc(18px * var(--ui-scale)); }
+    .map-car-name-text { font-size: calc(18px * var(--ui-scale)); }
+    .setting-item { padding: calc(16px * var(--ui-scale)) calc(20px * var(--ui-scale)); }
+    .setting-label-group { gap: calc(16px * var(--ui-scale)); }
+    .setting-label-group img { width: calc(28px * var(--ui-scale)); height: calc(28px * var(--ui-scale)); }
+}
+
+/* Otimização para Telas Pequenas (Mobile Small - ex: iPhone SE, Androids antigos) */
+@media (max-width: 370px) {
+    .garage-header { padding: calc(10px * var(--ui-scale)) calc(15px * var(--ui-scale)); gap: calc(10px * var(--ui-scale)); }
+    .profile-avatar { width: calc(40px * var(--ui-scale)); height: calc(40px * var(--ui-scale)); }
+    .header-add-btn { width: calc(40px * var(--ui-scale)); height: calc(40px * var(--ui-scale)); }
+    .garage-title { font-size: calc(16px * var(--ui-scale)); }
+    .garage-subtitle { font-size: calc(12px * var(--ui-scale)); }
+    .car-image-container { min-height: 200px; height: 35vh; }
+    .car-details { padding: calc(15px * var(--ui-scale)); gap: calc(10px * var(--ui-scale)); }
+    .car-name { font-size: calc(13px * var(--ui-scale)); padding: calc(4px * var(--ui-scale)) calc(10px * var(--ui-scale)); }
+    .car-plate-display { transform: scale(0.85); transform-origin: right bottom; margin-right: -2px; }
+    #bottom-panel { padding: calc(10px * var(--ui-scale)) calc(15px * var(--ui-scale)); width: 92%; border-radius: calc(40px * var(--ui-scale)); }
+    .widgets-row { gap: calc(15px * var(--ui-scale)); }
+    .widget-icon-box { width: calc(32px * var(--ui-scale)); height: calc(32px * var(--ui-scale)); }
+    .widget-label { font-size: calc(11px * var(--ui-scale)); }
+}
+
+/* Otimização para Modo Paisagem (Landscape) */
+@media (max-height: 600px) and (orientation: landscape) {
+    .app-section {
+        justify-content: flex-start;
+        overflow-y: auto; /* Habilita scroll vertical se necessário */
+        padding-top: 20px;
+        padding-bottom: 90px; /* Espaço para o menu */
+    }
+    .garage-box { margin: 0 auto; width: 80%; max-width: calc(500px * var(--ui-scale)); }
+    .car-image-container { height: 50vh; min-height: 200px; }
+    #bottom-panel { 
+        padding: 8px 20px; 
+        bottom: 10px; 
+        width: auto;
+        min-width: 300px;
+    }
+    .widget-icon-box { width: 30px; height: 30px; }
+}
+
+.ui-anim {
+  transition:
+    transform 160ms ease-out,
+    opacity 160ms ease-out;
+}
+
+/* Pull to Refresh Styles */
+.pull-refresh-indicator {
+    height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background-color: var(--card-bg);
+    /* transition: height 0.2s ease-out; (Controlado via JS durante o drag) */
+}
+
+.pull-refresh-content {
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--ui-scale));
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s;
+}
+
+.pull-refresh-content span {
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.pull-refresh-icon {
+    width: calc(20px * var(--ui-scale));
+    height: calc(20px * var(--ui-scale));
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
