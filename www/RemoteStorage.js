@@ -135,8 +135,8 @@ export class OfflineStorageAdapter {
 export class RemoteStorage {
     constructor() {
         this.client = null;
-        this.url = 'https://SEU_PROJECT_ID.supabase.co';
-        this.key = 'SEU_ANON_KEY';
+        this.url = import.meta.env.VITE_SUPABASE_URL;
+        this.key = import.meta.env.VITE_SUPABASE_ANON_KEY;
     }
 
     async init() {
@@ -146,7 +146,9 @@ export class RemoteStorage {
         // Crie a tabela: create table fleets ( id text primary key, data jsonb );
         
         // Validação básica para evitar erros com chaves de exemplo
-        const isConfigured = this.url !== 'https://SEU_PROJECT_ID.supabase.co' && this.key !== 'SEU_ANON_KEY';
+        const isConfigured = this.url && this.key && 
+                             this.url !== 'https://SEU_PROJECT_ID.supabase.co' && 
+                             this.key !== 'SEU_ANON_KEY';
 
         try {
             // Validação de Dependência Crítica
