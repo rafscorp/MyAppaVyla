@@ -1,7 +1,28 @@
-node_modules/
-dist/
-.DS_Store
-Thumbs.db
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependências
+node_modules
+
+# Build
+dist
+dist-ssr
+
+# Ambiente e Segredos (CRÍTICO)
 .env
-android/app/src/main/assets/public/*
-!android/app/src/main/assets/public/.gitkeep
+.env.local
+.env.*.local
+
+# Editor
+.vscode/*
+.idea
+.DS_Store
+
+# Android
+android/app/build
+android/.gradle
+android/local.properties
+android/captures
+android/app/src/main/assets/public
