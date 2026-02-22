@@ -1,5 +1,61 @@
 import { createClient } from '@supabase/supabase-js';
 
+// --- IndexedDB Queue System ---
+const DB_NAME = 'HyperEngineDB';
+const STORE_NAME = 'sync_queue';
+let _db = null;
+
+function getDB() {
+    return new Promise((resolve, reject) => {
+        if (_db) return resolve(_db);
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+            }
+        };
+        request.onsuccess = (e) => {
+            _db = e.target.result;
+            resolve(_db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function enqueueRequest(action, payload) {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.add({ action, payload, timestamp: Date.now() });
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function getQueue() {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function deleteFromQueue(id) {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
 export class OfflineStorageAdapter {
     constructor() {
         console.log('[Remote] Using OfflineStorageAdapter (Supabase Mock)');
@@ -186,29 +242,37 @@ export class RemoteStorage {
     }
 
     async save(data) {
-        if (!this.client) await this.init();
-        if (!this.client) return;
-        
-        // Verifica conexão antes de tentar
-        if (!navigator.onLine) {
-            this._markPending();
+        try {
+            if (!this.client) await this.init();
+        } catch (e) {
+            console.error('[Remote] Init failed, cannot save.', e);
             return;
         }
 
-        try {
-            const userId = this.getUserId();
-            
-            const { error } = await this.client
-                .from('fleets')
-                .upsert({ id: userId, data: data });
+        const userId = this.getUserId();
+
+        // Tenta envio direto se online
+        if (navigator.onLine && this.client) {
+            try {
+                const { error } = await this.client
+                    .from('fleets')
+                    .upsert({ id: userId, data: data });
                 
-            if (error) throw error;
-            
-            console.log('[Remote] Salvo na nuvem com sucesso.');
-            this._clearPending();
+                if (error) throw error;
+                
+                console.log('[Remote] Salvo na nuvem com sucesso.');
+                return;
+            } catch (e) {
+                console.warn('[Remote] Falha no envio online. Enfileirando...', e);
+            }
+        }
+
+        // Fallback: Enfileira no IndexedDB
+        try {
+            await enqueueRequest('UPSERT', { id: userId, data: data });
+            console.log('[Remote] Salvo na fila offline (IndexedDB).');
         } catch (e) {
-            console.error('[Remote] Exceção ao salvar:', e);
-            this._markPending();
+            console.error('[Remote] ERRO CRÍTICO: Falha ao salvar na fila offline.', e);
         }
     }
 
@@ -217,7 +281,7 @@ export class RemoteStorage {
         if (!this.client) return null;
         
         // Proteção: Se houver dados pendentes de envio, não baixa do remoto para evitar sobrescrita
-        if (this.isPending()) {
+        if (await this.isPending()) {
             console.log('[Remote] Sincronização pendente. Mantendo dados locais.');
             return null;
         }
@@ -242,41 +306,95 @@ export class RemoteStorage {
     async remove() {
         if (!this.client) await this.init();
         if (!this.client) return;
+        const userId = this.getUserId();
+
+        if (navigator.onLine) {
+            try {
+                const { error } = await this.client.from('fleets').delete().eq('id', userId);
+                if (error) throw error;
+                console.log('[Remote] Removido da nuvem.');
+                return;
+            } catch (e) {
+                console.warn('[Remote] Falha ao remover online. Enfileirando...', e);
+            }
+        }
+
         try {
-            const userId = this.getUserId();
-            await this.client.from('fleets').delete().eq('id', userId);
+            await enqueueRequest('DELETE', { id: userId });
+            console.log('[Remote] Remoção enfileirada (Offline).');
         } catch (e) {
-            console.error('[Remote] Exceção ao remover:', e);
+            console.error('[Remote] Erro ao enfileirar remoção:', e);
         }
     }
 
     // --- Controle de Estado de Sincronização ---
-    isPending() {
-        return !!localStorage.getItem('hyperengine_sync_pending');
-    }
-
-    _markPending() {
-        localStorage.setItem('hyperengine_sync_pending', 'true');
-    }
-
-    _clearPending() {
-        localStorage.removeItem('hyperengine_sync_pending');
+    async isPending() {
+        try {
+            const q = await getQueue();
+            return q.length > 0;
+        } catch { return false; }
     }
 
     // Configura o listener de rede para sincronização automática
-    setupAutoSync(getDataProvider) {
-        window.addEventListener('online', async () => {
-            if (this.isPending()) {
-                console.log('[Remote] Conexão restabelecida. Iniciando sincronização...');
-                try {
-                    const data = await getDataProvider();
-                    if (data) {
-                        await this.save(data);
-                    }
-                } catch (e) {
-                    console.error('[Remote] Erro na auto-sincronização:', e);
+    setupAutoSync() {
+        let retryAttempt = 0;
+        let isSyncing = false;
+
+        const processQueue = async () => {
+            if (isSyncing || !navigator.onLine) return;
+            isSyncing = true;
+
+            try {
+                if (!this.client) await this.init();
+
+                const queue = await getQueue();
+                if (queue.length === 0) {
+                    isSyncing = false;
+                    return;
                 }
+
+                console.log(`[Remote] Sincronizando ${queue.length} itens da fila...`);
+
+                for (const item of queue) {
+                    try {
+                        if (item.action === 'UPSERT') {
+                            const { error } = await this.client.from('fleets').upsert(item.payload);
+                            if (error) throw error;
+                        } else if (item.action === 'DELETE') {
+                            const { error } = await this.client.from('fleets').delete().eq('id', item.payload.id);
+                            if (error) throw error;
+                        }
+                        await deleteFromQueue(item.id);
+                        retryAttempt = 0; // Sucesso: reseta backoff
+                    } catch (e) {
+                        console.error('[Remote] Falha na sincronização do item:', item, e);
+                        
+                        // Backoff Exponencial: 2s, 4s, 8s, 16s, 30s (max)
+                        const delay = Math.min(2000 * Math.pow(2, retryAttempt), 30000);
+                        retryAttempt++;
+                        
+                        console.log(`[Remote] Agendando retry em ${delay}ms (Tentativa ${retryAttempt})`);
+                        setTimeout(() => {
+                            isSyncing = false;
+                            processQueue();
+                        }, delay);
+                        
+                        return; // Interrompe o loop atual, aguarda o retry
+                    }
+                }
+            } catch (e) {
+                console.error('[Remote] Erro no loop de sync:', e);
             }
+            isSyncing = false;
+        };
+
+        window.addEventListener('online', () => {
+            console.log('[Remote] Conexão detectada. Reiniciando fila.');
+            retryAttempt = 0;
+            processQueue();
         });
+        
+        // Tenta processar na inicialização
+        setTimeout(processQueue, 3000);
     }
 }

@@ -84,6 +84,15 @@ export class UIManager {
             this.setupNicknameValidation('edit-nickname-input', 'edit-nickname-validation');
             this.initResponsiveSystem();
             this.restoreLastTab();
+
+            // Remove Skeleton com delay para suavidade (UX Premium)
+            setTimeout(() => {
+                const skeleton = document.getElementById('app-skeleton');
+                if (skeleton) {
+                    skeleton.style.opacity = '0';
+                    setTimeout(() => skeleton.remove(), 600); // Aguarda transição CSS
+                }
+            }, 1200); // Tempo mínimo de 1.2s
         } catch (e) {
             console.error('[UIManager] Critical Init Error:', e);
         }

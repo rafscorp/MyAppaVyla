@@ -14,9 +14,8 @@
     <script>
         // Anti-FOUC: Injeção Imediata de Tema
         (function() {
-            const theme = localStorage.getItem('theme') || 'dark';
-            const bg = theme === 'dark' ? '#000000' : '#F2F2F7';
-            document.documentElement.style.setProperty('--bg-color', bg);
+            // Força preto inicial para transição suave do Splash Screen
+            document.documentElement.style.setProperty('--bg-color', '#000000');
         })();
     </script>
     <script>
@@ -61,9 +60,15 @@
 
     <!-- Skeleton Loader (Tela de Carregamento) -->
     <div id="app-skeleton" class="skeleton-layer">
-        <div class="skeleton-header skeleton-pulse"></div>
-        <div class="skeleton-card skeleton-pulse"></div>
-        <div class="skeleton-bottom skeleton-pulse"></div>
+        <div class="skeleton-header-row">
+            <div class="skeleton-circle skeleton-shimmer"></div>
+            <div class="skeleton-text-group">
+                <div class="skeleton-line short skeleton-shimmer"></div>
+                <div class="skeleton-line long skeleton-shimmer"></div>
+            </div>
+        </div>
+        <div class="skeleton-main-card skeleton-shimmer"></div>
+        <div class="skeleton-bottom-bar skeleton-shimmer"></div>
     </div>
 
     <!-- Camada de Renderização Principal (GPU) -->

@@ -27,6 +27,7 @@ export async function runDebugTests() {
             await import('./GarageRepository.test.js').catch(e => console.warn('[Debug] GarageRepository tests skipped:', e.message));
             await import('./FipeApi.test.js').catch(e => console.warn('[Debug] FipeApi tests skipped:', e.message));
             await import('./UIManager.test.js').catch(e => console.warn('[Debug] UIManager tests skipped:', e.message));
+            await import('./RemoteStorage.test.js').catch(e => console.warn('[Debug] RemoteStorage tests skipped:', e.message));
             
             // Teste Visual (Executa após um breve delay para garantir renderização)
             setTimeout(async () => {
