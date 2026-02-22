@@ -26,3 +26,4 @@ android/.gradle
 android/local.properties
 android/captures
 android/app/src/main/assets/public
+bfg-1.14.0.jar
