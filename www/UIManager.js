@@ -7,6 +7,8 @@ import { UIQueueManager } from './UIQueueManager.js';
 import { VirtualScroller } from './VirtualScroller.js';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
+import { Geolocation } from '@capacitor/geolocation';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export class UIManager {
     constructor() {
@@ -48,7 +50,11 @@ export class UIManager {
 
     // Helper para Feedback Tátil (Haptics)
     vibrate(ms = 8) {
-        if (navigator.vibrate) navigator.vibrate(ms);
+        try {
+            Haptics.impact({ style: ImpactStyle.Light });
+        } catch (e) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
     }
 
     async init() {
@@ -192,7 +198,9 @@ export class UIManager {
             }
         }, true);
 
-        this.widgets.forEach(widget => {
+        // Validação defensiva para Widgets
+        if (this.widgets && this.widgets.length > 0) {
+            this.widgets.forEach(widget => {
             const handleInteraction = (e) => {
                 // Impede que o evento chegue ao Input.js (Canvas)
                 e.stopPropagation();
@@ -208,13 +216,14 @@ export class UIManager {
             // Listeners para Mobile (Touch) e Desktop (Click)
             widget.addEventListener('touchstart', handleInteraction, { passive: false }); // Non-passive needed for preventDefault
             widget.addEventListener('click', handleInteraction, { passive: true });
-        });
+            });
+        }
 
         this.setupAutocomplete();
 
         // Modal Logic
         const addBtn = document.getElementById('fab-add-car');
-        const modal = document.getElementById('add-car-modal');
+        const modal = document.getElementById('add-car-wizard'); // CORREÇÃO: ID atualizado para o Wizard
         const closeBtn = modal ? modal.querySelector('.close-modal-btn') : null;
         const actionBtn = modal ? modal.querySelector('.modal-action-btn') : null;
         const manualModeBtn = document.getElementById('manual-mode-btn');
@@ -465,7 +474,7 @@ export class UIManager {
             confirmDiscardBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.resetAddCarForm();
-                document.getElementById('add-car-modal').classList.remove('visible');
+                document.getElementById('add-car-wizard').classList.remove('visible'); // CORREÇÃO ID
                 if (discardModal) discardModal.classList.remove('visible');
             });
         }
@@ -488,7 +497,7 @@ export class UIManager {
             closeFinalizeBtn.addEventListener('click', () => {
                 // Ao fechar a finalização, volta para o primeiro modal para não perder dados
                 finalizeModal.classList.remove('visible');
-                document.getElementById('add-car-modal').classList.add('visible');
+                document.getElementById('add-car-wizard').classList.add('visible'); // CORREÇÃO ID
             });
         }
 
@@ -1003,7 +1012,7 @@ export class UIManager {
             // Lógica específica para modais aninhados
             if (topModal.id === 'finalize-car-modal') {
                 topModal.classList.remove('visible');
-                document.getElementById('add-car-modal').classList.add('visible');
+                document.getElementById('add-car-wizard').classList.add('visible'); // CORREÇÃO ID
                 return true;
             }
 
@@ -1013,7 +1022,7 @@ export class UIManager {
                 return true;
             }
 
-            if (topModal.id === 'add-car-modal') {
+            if (topModal.id === 'add-car-wizard') { // CORREÇÃO ID
                 // Sempre pede confirmação ao voltar no Android
                 document.getElementById('confirm-discard-modal').classList.add('visible');
                 return true;
@@ -1210,7 +1219,7 @@ export class UIManager {
     }
 
     handleModalClose(e) {
-        const modal = document.getElementById('add-car-modal');
+        const modal = document.getElementById('add-car-wizard'); // CORREÇÃO ID
         if (!modal) return;
 
         // Se o evento for no modal (clique fora), verifica se o target é o próprio modal
@@ -1311,6 +1320,7 @@ export class UIManager {
                         
                         this.mapRenderer.verifyAndResize();
                         if (this.mapRenderer.map && !this.hasSetupMapControls) {
+                            this.mapRenderer.map.resize(); // CORREÇÃO: Força o canvas a preencher o container
                             this.setupMapControls();
                         }
                     }, 150); // Delay aumentado para garantir estabilidade visual
@@ -1579,18 +1589,16 @@ export class UIManager {
         if (btnLocate) {
             btnLocate.onclick = () => {
                 btnLocate.classList.add('pulsing'); // Ativa efeito visual
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(pos => {
-                        const coords = [pos.coords.longitude, pos.coords.latitude];
-                        this.mapRenderer.flyTo({lng: coords[0], lat: coords[1]}, 15);
-                        this.mapRenderer.updateUserLocation(coords);
-                        btnLocate.classList.remove('pulsing'); // Remove ao sucesso
-                    }, err => {
-                        this.showToast('Erro ao obter localização');
-                        btnLocate.classList.remove('pulsing'); // Remove ao erro
-                        console.error(err);
-                    }, { enableHighAccuracy: true });
-                }
+                Geolocation.getCurrentPosition({ enableHighAccuracy: true }).then(pos => {
+                    const coords = [pos.coords.longitude, pos.coords.latitude];
+                    this.mapRenderer.flyTo({lng: coords[0], lat: coords[1]}, 15);
+                    this.mapRenderer.updateUserLocation(coords);
+                    btnLocate.classList.remove('pulsing');
+                }).catch(err => {
+                    this.showToast('Erro ao obter localização');
+                    btnLocate.classList.remove('pulsing');
+                    console.error(err);
+                });
             };
         }
         // Tenta localizar o usuário assim que o mapa carregar
@@ -1644,8 +1652,15 @@ export class UIManager {
     renderGarage() {
         const container = document.getElementById('garage-container');
         const fabContainer = document.querySelector('.fab-container') || document.getElementById('fab-add-car');
+
+        // FASE 2: Unificação da Barra Inferior - Visibilidade Incondicional e Correção de ID
         const bottomPanel = document.getElementById('bottom-panel');
-        if (bottomPanel) bottomPanel.style.display = 'flex'; // Garante que os widgets sempre apareçam
+        if (bottomPanel) {
+            bottomPanel.style.display = 'flex';
+            // Garante que o painel vazio antigo (se existir por cache) seja ocultado
+            const oldEmptyPanel = document.getElementById('bottom-panel-empty');
+            if (oldEmptyPanel) oldEmptyPanel.style.display = 'none';
+        }
         
         if (!container) return;
         container.innerHTML = '';
@@ -1679,13 +1694,15 @@ export class UIManager {
                 </div>
             `;
             const btn = container.querySelector('#add-first-car-btn');
+            
+            // FASE 3: Delegação de Eventos Segura para Botão Injetado (Programação Defensiva)
             this.addSafeClickListener(btn, () => {
                 this.vibrate(10);
-                const modal = document.getElementById('add-car-modal');
+                const modal = document.getElementById('add-car-wizard'); // CORREÇÃO ID
                 if (modal) {
+                    this.resetAddCarForm(); // Reseta o formulário para estado limpo
+                    this.loadBrands();      // Inicia carregamento de marcas
                     modal.classList.add('visible');
-                    this.resetAddCarForm();
-                    this.loadBrands();
                 }
             });
             return;
@@ -1824,7 +1841,7 @@ export class UIManager {
         if (headerAddBtn) {
             this.addSafeClickListener(headerAddBtn, () => {
                 this.vibrate(10);
-                const modal = document.getElementById('add-car-modal');
+                const modal = document.getElementById('add-car-wizard'); // CORREÇÃO ID
                 if (modal) {
                     modal.classList.add('visible');
                     this.resetAddCarForm();
@@ -3025,7 +3042,7 @@ export class UIManager {
 
     async loadBrands() {
         // FIX: Busca o botão dentro do modal para não confundir com o botão da tela vazia
-        const modal = document.getElementById('add-car-modal');
+        const modal = document.getElementById('add-car-wizard'); // CORREÇÃO ID
         const actionBtn = modal ? modal.querySelector('.modal-action-btn') : null;
         
         // Se já temos dados em memória, não busca novamente
@@ -3064,7 +3081,7 @@ export class UIManager {
 
     async loadModels(brandCode, vehicleType) {
         // FIX: Busca o botão dentro do modal para não confundir com o botão da tela vazia
-        const modal = document.getElementById('add-car-modal');
+        const modal = document.getElementById('add-car-wizard'); // CORREÇÃO ID
         const actionBtn = modal ? modal.querySelector('.modal-action-btn') : null;
         const modelInput = document.getElementById('car-model');
         const modelList = document.getElementById('car-model-suggestions');
@@ -3338,7 +3355,7 @@ export class UIManager {
         // Calcula escala baseada na geometria da tela e aplica transformações
         
         // OTIMIZAÇÃO: Limpeza de estilos legados movida para inicialização (roda apenas uma vez)
-        const targets = ['.garage-box', '.empty-garage-box', '.settings-box', '.map-ui-box', '#bottom-panel', '#bottom-panel-empty', '.map-list-wrapper'];
+        const targets = ['.garage-box', '.empty-garage-box', '.settings-box', '.map-ui-box', '#bottom-panel', '.map-list-wrapper'];
         targets.forEach(selector => {
             const el = document.querySelector(selector);
             if (el) {

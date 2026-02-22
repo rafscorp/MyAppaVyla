@@ -38,12 +38,15 @@
                 }
             }
         }, true);
+
     </script>
     
+    <!-- Mapbox GL (Essencial para o Mapa) -->
+    <script type="module" src="libs/mapbox-gl.js"></script>
+    <link href="libs/mapbox-gl.css" rel="stylesheet" />
+
     <link rel="stylesheet" href="engine.css">
     <link rel="icon" href="data:,">
-    
-    <script src="cordova.js"></script>
 </head>
 <body>
     <div id="dynamic-bg"></div>
@@ -189,14 +192,176 @@
             </div>
         </div>
 
-        <!-- Modal Adicionar Carro -->
-        <!-- ... (Rest of the file content removed for brevity as it is being replaced) ... -->
-        <!-- Interface estilo Uber (Bottom Sheet) - Estado Vazio (Apenas Início e Ajustes) -->
-        <div id="bottom-panel-empty" style="display: none;">
+        <!-- Wizard Adicionar Carro (Fase 1) -->
+        <div id="add-car-wizard" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <span class="modal-title">Adicionar Veículo</span>
+                    <div class="close-modal-btn">×</div>
+                </div>
+                
+                <div class="wizard-progress">
+                    <div class="progress-dot active" id="dot-step-1"></div>
+                    <div class="progress-dot" id="dot-step-2"></div>
+                </div>
+
+                <div class="wizard-container">
+                    <div class="wizard-slider" id="wizard-slider">
+                        <!-- PASSO 1: DADOS -->
+                        <div class="wizard-step active" id="wizard-step-1">
+                            <div class="input-group">
+                                <input type="text" id="car-brand" class="modal-input" placeholder="Marca" autocomplete="off">
+                                <div id="clear-brand" class="clear-input-btn">×</div>
+                                <div id="car-brand-suggestions" class="suggestions-list"></div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <input type="text" id="car-model" class="modal-input" placeholder="Modelo" disabled autocomplete="off">
+                                <div id="model-loader" class="input-loader"></div>
+                                <div id="clear-model" class="clear-input-btn">×</div>
+                                <div id="car-model-suggestions" class="suggestions-list"></div>
+                            </div>
+
+                            <div class="plate-type-container">
+                                <div class="plate-type-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="plate-type" value="OLD" checked>
+                                        <span class="radio-text">ABC-1234</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="plate-type" value="MERCOSUL">
+                                        <span class="radio-text">ABC1D23</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <input type="text" id="car-plate" class="modal-input" placeholder="Placa (Opcional)" maxlength="8" style="text-transform: uppercase;">
+                                <div id="clear-plate" class="clear-input-btn">×</div>
+                                <span id="plate-counter" class="char-counter">0/8</span>
+                            </div>
+
+                            <button id="manual-mode-btn">
+                                <img src="img/edit.svg" alt="">
+                                <span>Entrada Manual</span>
+                            </button>
+
+                            <button id="wizard-next-btn" class="modal-action-btn">
+                                <span class="button-text">Continuar</span>
+                            </button>
+                        </div>
+
+                        <!-- PASSO 2: FOTO E APELIDO -->
+                        <div class="wizard-step" id="wizard-step-2">
+                            <div class="modal-hint">
+                                Personalize seu <span id="summary-brand" style="color:var(--accent-color);font-weight:700;"></span> <span id="summary-model" style="font-weight:700;"></span>
+                            </div>
+
+                            <div id="car-photo-container" class="photo-upload-container">
+                                <div class="photo-placeholder">
+                                    <img src="img/camera.svg" class="camera-icon" alt="">
+                                    <span>Adicionar Foto</span>
+                                </div>
+                                <img id="car-photo-preview" style="display: none;">
+                                <input type="file" id="car-photo-input" accept="image/*" hidden>
+                            </div>
+
+                            <div class="input-group">
+                                <input type="text" id="car-nickname" class="modal-input" placeholder="Apelido (ex: Possante)" maxlength="25">
+                                <div id="clear-nickname" class="clear-input-btn">×</div>
+                                <span id="nickname-counter" class="char-counter">0/25</span>
+                                <div id="nickname-validation" class="input-alert-icon">!</div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button id="wizard-back-btn" class="modal-action-btn" style="background: #333; width: 30%;">
+                                    ←
+                                </button>
+                                <button id="confirm-add-car-btn" class="modal-action-btn" style="width: 70%;">
+                                    <span class="button-text">Salvar</span>
+                                    <div class="spinner"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Confirmação de Descarte -->
+        <div id="confirm-discard-modal" class="modal-overlay" style="z-index: 2100;">
+            <div class="modal-box shake-modal">
+                <div class="modal-header centered-header">
+                    <span class="modal-title">Descartar alterações?</span>
+                </div>
+                <p class="modal-hint">Os dados inseridos serão perdidos.</p>
+                <div class="modal-content" style="flex-direction: row; gap: 10px;">
+                    <button id="cancel-discard-btn" class="modal-action-btn" style="background: #333; color: #fff;">Voltar</button>
+                    <button id="confirm-discard-btn" class="modal-action-btn danger-btn">Descartar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Recorte (Crop) -->
+        <div id="crop-modal" class="modal-overlay" style="z-index: 2200;">
+            <div class="modal-box" style="padding: 0; background: #000; height: 100%; width: 100%; border-radius: 0;">
+                <div class="crop-viewport">
+                    <img id="crop-image" src="">
+                </div>
+                <div class="crop-controls-panel" style="padding: 20px; background: #1C1C1E; position: absolute; bottom: 0; width: 100%;">
+                    <div class="crop-toolbar">
+                        <button id="rotate-left-btn" class="tool-btn">↺</button>
+                        <button id="rotate-right-btn" class="tool-btn">↻</button>
+                        <button id="crop-reset-zoom-btn" class="tool-btn">⤢</button>
+                    </div>
+                    <div class="crop-controls">
+                        <span style="color:#fff; font-size:12px;">Zoom</span>
+                        <input type="range" id="crop-zoom-slider" min="0.1" max="3" step="0.1" value="1">
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-top: 10px;">
+                        <button id="cancel-crop-btn" class="modal-action-btn" style="background: #333;">Cancelar</button>
+                        <button id="confirm-crop-btn" class="modal-action-btn">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Sheet (Fase 3) -->
+        <div id="car-action-sheet" class="modal-overlay">
+            <div class="action-sheet-panel">
+                <div class="action-sheet-item" id="action-locate">
+                    <img src="img/location.svg" class="action-sheet-icon" alt="">
+                    <span>Localizar no Mapa</span>
+                </div>
+                <div class="action-sheet-item" id="action-alerts">
+                    <img src="img/notifications.svg" class="action-sheet-icon" alt="">
+                    <span>Configurar Alertas</span>
+                </div>
+                <div class="action-sheet-item" id="action-edit">
+                    <img src="img/edit.svg" class="action-sheet-icon" alt="">
+                    <span>Editar Veículo</span>
+                </div>
+                <div class="action-sheet-item destructive" id="action-delete">
+                    <img src="img/trash.svg" class="action-sheet-icon" alt="">
+                    <span>Remover Veículo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Inferior Unificado (Bottom Panel) -->
+        <div id="bottom-panel">
             <div class="widgets-row">
                 <div class="widget active" data-target="home-section">
                     <div class="widget-icon-box"><img src="img/home.svg" alt="Início"></div>
                     <div class="widget-label">Início</div>
+                </div>
+                <div class="widget" data-target="map-section">
+                    <div class="widget-icon-box"><img src="img/location.svg" alt="Mapa"></div>
+                    <div class="widget-label">Mapa</div>
+                </div>
+                <div class="widget" data-target="alerts-section">
+                    <div class="widget-icon-box"><img src="img/notifications.svg" alt="Alertas"></div>
+                    <div class="widget-label">Alertas</div>
                 </div>
                 <div class="widget" data-target="settings-section">
                     <div class="widget-icon-box"><img src="img/settings.svg" alt="Configurações"></div>

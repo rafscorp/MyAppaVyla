@@ -2,10 +2,7 @@ import { Engine } from './Engine.js';
 import { runDebugTests } from './main.js';
 import { Logger } from './Logger.js';
 
-const isCordova = !!window.cordova;
-const bootEvent = isCordova ? 'deviceready' : 'DOMContentLoaded';
-
-document.addEventListener(bootEvent, async () => {
+document.addEventListener('DOMContentLoaded', async () => {
     Logger.init();
     runDebugTests();
 
@@ -36,6 +33,12 @@ document.addEventListener(bootEvent, async () => {
         await window.__ENGINE__.start();
         
         console.log('[BOOT] Engine Started Successfully (Singleton)');
+
+        // Consome token gerado em background pelo app.html
+        const pendingToken = localStorage.getItem('fcm_pending_token');
+        if (pendingToken) {
+            window.__ENGINE__.registerDeviceToken(pendingToken);
+        }
     } catch (e) {
         console.error('[BOOT] FATAL STARTUP ERROR:', e);
         showFatalError(e);

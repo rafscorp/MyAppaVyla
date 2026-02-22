@@ -196,8 +196,8 @@ img {
     pointer-events: none; /* Permite clicar fora da box */
     z-index: 5;
     opacity: 0;
-    transform: scale(0.95);
-    transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateY(15px); /* Começa um pouco abaixo */
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     transform: translate3d(0,0,0); /* Force GPU Layer */
     backface-visibility: hidden;
 }
@@ -205,7 +205,7 @@ img {
 .app-section.active {
     display: flex;
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
     pointer-events: auto;
 }
 
@@ -1171,7 +1171,7 @@ body.dark-mode span.ripple {
     min-width: calc(90px * var(--ui-scale));
     text-align: center;
     line-height: 1.2;
-    cursor: pointer;
+    cursor: default;
 }
 
 .car-plate-display:active {
@@ -1233,13 +1233,13 @@ body.dark-mode span.ripple {
     right: 2px;
 }
 
-.remove-car-btn, .edit-car-btn {
+.car-options-btn {
     position: absolute;
     top: calc(15px * var(--ui-scale));
+    right: calc(15px * var(--ui-scale));
     width: max(44px, calc(40px * var(--ui-scale)));
     height: max(44px, calc(40px * var(--ui-scale)));
     background: rgba(0, 0, 0, 0.4);
-    /* OTIMIZAÇÃO: Blur removido */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
@@ -1250,19 +1250,16 @@ body.dark-mode span.ripple {
     z-index: 20;
 }
 
-.remove-car-btn { right: calc(15px * var(--ui-scale)); }
-.edit-car-btn { right: calc(65px * var(--ui-scale)); }
-
-.remove-car-btn:active, .edit-car-btn:active {
+.car-options-btn:active {
     transform: scale(0.9);
     background: rgba(255, 255, 255, 0.2);
 }
 
-.remove-car-btn img, .edit-car-btn img {
-    width: calc(20px * var(--ui-scale));
-    height: calc(20px * var(--ui-scale));
+.car-options-btn img {
+    width: calc(24px * var(--ui-scale));
+    height: calc(24px * var(--ui-scale));
     filter: brightness(0) invert(1);
-    opacity: 0.9;
+    opacity: 1;
 }
 
 .car-slot.fade-in {
@@ -1375,25 +1372,6 @@ body.dark-mode span.ripple {
     z-index: 100; /* Garante que os widgets fiquem acima do mapa e listas */
 }
 
-#bottom-panel-empty {
-    position: absolute;
-    bottom: max(calc(59px * var(--ui-scale)), env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translate3d(-50%, 0, 0);
-    width: auto; /* Largura automática para ficar pequeno */
-    min-width: calc(200px * var(--ui-scale));
-    background-color: var(--bottom-panel-bg);
-    border: 1px solid var(--border-color);
-    border-radius: calc(60px * var(--ui-scale));
-    padding: calc(14px * var(--ui-scale)) calc(30px * var(--ui-scale)) calc(13px * var(--ui-scale)); /* Padding lateral maior para centralizar visualmente */
-    /* box-shadow: 0 10px 30px var(--shadow-color); REMOVIDO */
-    display: flex;
-    flex-direction: column;
-    gap: calc(10px * var(--ui-scale));
-    pointer-events: auto;
-    z-index: 100;
-}
-
 .widgets-row {
     display: flex;
     justify-content: center;
@@ -1498,7 +1476,7 @@ body.dark-mode span.ripple {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.85); /* Mais escuro e sólido para performance */
-    z-index: 2000; /* Acima de tudo, inclusive da tela vazia (1001) */
+    z-index: 2000; /* Acima de tudo */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1618,11 +1596,11 @@ body.dark-mode span.ripple {
 
 .modal-input {
     width: 100%;
-    background: #2C2C2C; /* Surface Container High */
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); /* Sombra inicial */
-    border-bottom: 2px solid #444; /* Indicador inativo */
-    border-radius: calc(12px * var(--ui-scale)) calc(12px * var(--ui-scale)) calc(4px * var(--ui-scale)) calc(4px * var(--ui-scale)); /* Estilo Filled Input */
+    /* border-bottom: 2px solid #444; REMOVIDO */
+    border-radius: calc(16px * var(--ui-scale)); /* Mais arredondado */
     padding: calc(16px * var(--ui-scale));
     color: #E0E0E0;
     font-size: calc(16px * var(--ui-scale));
@@ -1742,9 +1720,9 @@ body.dark-mode span.ripple {
 }
 
 .modal-input:focus {
-    background: #333;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
     box-shadow: none;
-    border-bottom-color: var(--accent-color); /* Highlight na base */
     transform: scale(1.01); /* Leve zoom ao focar */
 }
 
@@ -2791,4 +2769,132 @@ input:checked + .slider:before {
     height: calc(20px * var(--ui-scale));
     color: var(--text-secondary);
     transition: transform 0.2s;
+}
+
+/* --- WIZARD STYLES (Fase 1) --- */
+.wizard-container {
+    width: 100%;
+    overflow: hidden; /* Esconde o passo que não está ativo */
+    position: relative;
+}
+
+.wizard-slider {
+    display: flex;
+    width: 200%; /* Dois passos lado a lado */
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* Slide suave */
+}
+
+.wizard-step {
+    width: 50%; /* Cada passo ocupa 100% do modal */
+    padding: 0 calc(4px * var(--ui-scale)); /* Pequeno gutter */
+    display: flex;
+    flex-direction: column;
+    gap: calc(16px * var(--ui-scale));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wizard-step.active {
+    opacity: 1;
+}
+
+.wizard-progress {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: calc(20px * var(--ui-scale));
+}
+
+.progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+    background: var(--accent-color);
+    transform: scale(1.2);
+}
+
+/* --- ACTION SHEET (Fase 3) --- */
+#car-action-sheet {
+    align-items: flex-end; /* Alinha no fundo */
+}
+
+.action-sheet-panel {
+    width: 100%;
+    max-width: calc(500px * var(--ui-scale));
+    background: var(--card-bg);
+    border-radius: calc(24px * var(--ui-scale)) calc(24px * var(--ui-scale)) 0 0;
+    padding: calc(25px * var(--ui-scale)) calc(20px * var(--ui-scale)) calc(40px * var(--ui-scale));
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: calc(10px * var(--ui-scale));
+}
+
+.modal-overlay.visible .action-sheet-panel {
+    transform: translateY(0);
+}
+
+.action-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: calc(15px * var(--ui-scale));
+    padding: calc(16px * var(--ui-scale));
+    background: var(--placeholder-bg);
+    border-radius: calc(16px * var(--ui-scale));
+    color: var(--text-primary);
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.action-sheet-item:active {
+    background: var(--border-color);
+    transform: scale(0.98);
+}
+
+.action-sheet-item.destructive {
+    color: #FF3B30;
+    background: rgba(255, 59, 48, 0.1);
+}
+
+.action-sheet-item.destructive:active {
+    background: rgba(255, 59, 48, 0.2);
+}
+
+.action-sheet-icon {
+    width: calc(24px * var(--ui-scale));
+    height: calc(24px * var(--ui-scale));
+    filter: var(--icon-filter);
+}
+
+.action-sheet-item.destructive .action-sheet-icon {
+    filter: invert(24%) sepia(96%) saturate(6482%) hue-rotate(355deg) brightness(97%) contrast(113%); /* Red filter */
+}
+
+/* --- EMPTY STATE (Fase 4) --- */
+.empty-state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 0 calc(30px * var(--ui-scale));
+    text-align: center;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.empty-state-icon {
+    width: calc(120px * var(--ui-scale));
+    height: calc(120px * var(--ui-scale));
+    margin-bottom: calc(20px * var(--ui-scale));
+    opacity: 0.8;
+    filter: var(--icon-filter);
 }

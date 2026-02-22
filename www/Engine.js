@@ -315,4 +315,30 @@ export class Engine {
             console.error('[Push] Falha ao configurar notificações:', e);
         }
     }
+
+    /**
+     * Mock API Endpoint para registo de token FCM.
+     * Chamado pelo bootstrap.js após obter o token do plugin.
+     */
+    async registerDeviceToken(token) {
+        // Verificação de Token Existente (Evita chamadas de API desnecessárias)
+        const storedToken = localStorage.getItem('fcm_token');
+        if (storedToken === token) {
+            console.log('[Engine] Token FCM inalterado. Sincronização ignorada.');
+            return;
+        }
+
+        console.log('[Engine] Mock API: Recebendo novo token FCM...', token);
+        
+        // Simula delay de rede (API Call)
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        try {
+            localStorage.setItem('fcm_token', token);
+            localStorage.setItem('fcm_token_timestamp', Date.now().toString());
+            console.log('[Engine] Mock API: Token atualizado e persistido com sucesso.');
+        } catch (e) {
+            console.error('[Engine] Erro ao persistir token:', e);
+        }
+    }
 }

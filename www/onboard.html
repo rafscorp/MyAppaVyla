@@ -4,322 +4,354 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, viewport-fit=cover">
     <title>Bem-vindo</title>
-    <script src="cordova.js"></script>
     <style>
-        /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); REMOVED: No external CDNs */
-
+        /* --- DESIGN SYSTEM PREMIUM --- */
         :root {
-            --ui-scale: 1;
-            --accent-color: #007AFF;
-            --text-primary: #FFFFFF;
+            --primary: #007AFF;
+            --bg: #000000;
+            --text: #FFFFFF;
             --text-secondary: #8E8E93;
-            --bg-color: #000000;
+            --surface: #1C1C1E;
         }
-
+        
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text);
             overflow: hidden;
-            width: 100%;
-            height: 100%;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
             user-select: none;
-            -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .onboarding-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        /* --- SLIDER COM SCROLL SNAP (Nativo & Fluido) --- */
+        .onboard-slider {
+            flex: 75; /* Ocupa 75% da altura */
             display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory; /* A mágica do snap nativo */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .onboard-slider::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
         }
 
-        .onboarding-slide {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
+        /* Slide Individual */
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            scroll-snap-align: center; /* Ponto de paragem */
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-align: center;
-            width: 85%;
-            max-width: calc(360px * var(--ui-scale));
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.6s;
-            pointer-events: none;
-        }
-
-        .onboarding-slide.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translate(-50%, -50%) scale(1);
-            pointer-events: auto;
-        }
-
-        .onboarding-icon {
-            width: calc(120px * var(--ui-scale));
-            height: calc(120px * var(--ui-scale));
-            margin-bottom: calc(40px * var(--ui-scale));
-            /* Filtro para azul padrão do iOS/App */
-            filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);
-        }
-
-        /* Exceção para o ícone verde no final */
-        #slide-finish .onboarding-icon {
-            filter: invert(66%) sepia(50%) saturate(5463%) hue-rotate(93deg) brightness(98%) contrast(92%) drop-shadow(0 0 15px rgba(52, 199, 89, 0.4));
-        }
-
-        h1 {
-            color: var(--text-primary);
-            font-size: calc(28px * var(--ui-scale));
-            font-weight: 700;
-            margin: 0 0 calc(16px * var(--ui-scale)) 0;
-            line-height: 1.2;
-        }
-
-        p {
-            color: var(--text-secondary);
-            font-size: calc(16px * var(--ui-scale));
-            line-height: 1.5;
-            margin: 0 0 calc(60px * var(--ui-scale)) 0;
-            max-width: 90%;
-        }
-
-        .modal-action-btn {
-            width: 100%;
-            background: var(--accent-color);
-            border: none;
-            border-radius: 100px;
-            height: calc(56px * var(--ui-scale));
-            color: #fff;
-            font-weight: 700;
-            font-size: calc(16px * var(--ui-scale));
-            cursor: pointer;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            transition: transform 0.1s;
-            outline: none;
+            padding: 40px;
+            box-sizing: border-box;
+            text-align: center;
         }
 
-        .modal-action-btn:active {
-            transform: scale(0.96);
+        /* Conteúdo Visual */
+        .slide-image {
+            width: 80%;
+            max-width: 280px;
+            height: auto;
+            margin-bottom: 40px;
+            /* Sombra suave para profundidade */
+            filter: drop-shadow(0 10px 20px rgba(0,122,255,0.15));
+            /* Filtro para colorir os SVGs pretos para o tema */
+            transition: transform 0.5s ease;
         }
 
-        .onboarding-dots {
-            position: absolute;
-            bottom: calc(50px * var(--ui-scale));
+        .slide h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            line-height: 1.2;
+            /* Gradiente sutil no texto */
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide p {
+            font-size: 17px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin: 0;
+            max-width: 300px;
+        }
+
+        /* --- ÁREA DE CONTROLO (Bottom 30%) --- */
+        .controls-area {
+            flex: 25; /* 25% da altura */
             display: flex;
-            gap: calc(10px * var(--ui-scale));
-            z-index: 101;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px 50px;
+            /* Gradiente para suavizar a transição do fundo */
+            background: linear-gradient(to top, rgba(0,0,0,1) 20%, rgba(0,0,0,0));
+            z-index: 10;
+        }
+
+        /* Indicadores (Dots) */
+        .dots-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
         }
 
         .dot {
-            width: calc(8px * var(--ui-scale));
-            height: calc(8px * var(--ui-scale));
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
+            background-color: rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .dot.active {
-            background-color: var(--accent-color);
-            transform: scale(1.2);
+            width: 24px; /* Estica a bolinha ativa */
+            background-color: var(--primary);
+            border-radius: 4px;
         }
 
-        #parallax-bg {
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(0, 122, 255, 0.15), transparent 60%);
-            z-index: 1;
-            pointer-events: none;
-            transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        /* Botão de Ação Principal */
+        .action-btn {
+            width: 100%;
+            height: 56px;
+            border-radius: 28px;
+            border: none;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Estado Call to Action (Slide Final) */
+        .action-btn.primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4);
+        }
+
+        /* Estado de Carregamento/Espera */
+        .action-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <div id="parallax-bg"></div>
-    <div id="onboarding-screen" class="onboarding-overlay">
-        <div class="onboarding-slide active" id="slide-welcome">
-            <img src="img/car.svg" class="onboarding-icon">
-            <h1>Bem-vindo</h1>
-            <p>Gerencie sua frota com inteligência e precisão. Vamos configurar seu app.</p>
-            <button class="modal-action-btn" id="btn-start-onboarding">Começar</button>
-        </div>
-        
-        <div class="onboarding-slide" id="slide-location">
-            <img src="img/location.svg" class="onboarding-icon">
-            <h1>Localização</h1>
-            <p>Precisamos da sua localização para mostrar onde seus veículos estão estacionados no mapa.</p>
-            <button class="modal-action-btn" id="btn-allow-location">Permitir Localização</button>
-        </div>
-        
-        <div class="onboarding-slide" id="slide-notification">
-            <img src="img/notifications.svg" class="onboarding-icon">
-            <h1>Notificações</h1>
-            <p>Receba alertas importantes sobre manutenção e segurança dos seus veículos.</p>
-            <button class="modal-action-btn" id="btn-allow-notification">Permitir Notificações</button>
-        </div>
-        
-        <div class="onboarding-slide" id="slide-finish">
-            <img src="img/car.svg" class="onboarding-icon">
-            <h1>Tudo Pronto!</h1>
-            <p>Sua garagem está pronta para uso.</p>
-            <button class="modal-action-btn" id="btn-finish-onboarding">Entrar na Garagem</button>
+    <!-- Slider Container -->
+    <div class="onboard-slider" id="slider">
+        <!-- Slide 1: Bem-vindo -->
+        <div class="slide">
+            <!-- Ícone Carro -->
+            <img src="img/car.svg" class="slide-image" style="filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);">
+            <h1>Bem-vindo ao<br>MyAppaVyla</h1>
+            <p>O controlo total do seu veículo. Vamos configurar o seu dispositivo em poucos passos.</p>
         </div>
 
-        <div class="onboarding-dots">
-            <div class="dot active"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
+        <!-- Slide 2: Localização -->
+        <div class="slide">
+            <img src="img/location.svg" class="slide-image" style="filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);">
+            <h1>Rastreio Exato</h1>
+            <p>Precisamos de acesso à sua localização para mostrar a distância entre si e os seus veículos.</p>
+        </div>
+
+        <!-- Slide 3: Notificações -->
+        <div class="slide">
+            <!-- Ícone Sino (Filtro verde para sucesso/finalização) -->
+            <img src="img/notifications.svg" class="slide-image" style="filter: invert(66%) sepia(50%) saturate(5463%) hue-rotate(93deg) brightness(98%) contrast(92%);">
+            <h1>Mantenha-se Alerta</h1>
+            <p>Ative as notificações para receber avisos de movimento ou ignição ligada.</p>
         </div>
     </div>
 
+    <!-- Controls Area -->
+    <div class="controls-area">
+        <div class="dots-container">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <button id="action-btn" class="action-btn">Começar</button>
+    </div>
+
     <script>
-        // --- SISTEMA DE RESPONSIVIDADE (DPI MATH) ---
-        function updateLayoutScaling() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            
-            // UNIVERSAL DPI RESPONSIVE ENGINE
-            // Base resolution: Standard Mobile ~360x800 (Logical Pixels)
-            const BASE_AREA = 360 * 800;
-            const currentArea = width * height;
-            
-            // Calculate UI_SCALE based on area ratio (Diagonal scaling)
-            // Ajuste: Multiplicador 0.85 (Aumentado novamente para preencher melhor a tela)
-            let scale = Math.sqrt(currentArea / BASE_AREA) * 0.85;
-            
-            // --- HEIGHT CONSTRAINT LOGIC ---
-            // Garante que a interface caiba verticalmente
-            const safeHeight = height * 0.85;
-            const baseCardHeight = 600; 
-            const maxScaleByHeight = safeHeight / baseCardHeight;
+        // --- ESTADO DO DISPOSITIVO ---
+        let isDeviceReady = false;
+        document.addEventListener('deviceready', () => {
+            isDeviceReady = true;
+            console.log("[Onboard] Device Ready - Permissões Nativas Ativas");
+        }, false);
 
-            if (scale > maxScaleByHeight) scale = maxScaleByHeight;
+        // --- LÓGICA DE INTERAÇÃO ---
+        const slider = document.getElementById('slider');
+        const btn = document.getElementById('action-btn');
+        const dots = document.querySelectorAll('.dot');
+        let currentIndex = 0;
+        const totalSlides = 3;
 
-            // Clamp scale
-            scale = Math.max(0.70, Math.min(scale, 1.8));
-            
-            document.documentElement.style.setProperty('--ui-scale', scale);
-        }
+        // Helper de Vibração (Haptics)
+        const vibrate = (pattern) => {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        };
 
-        window.addEventListener('resize', updateLayoutScaling);
-        updateLayoutScaling(); // Inicializa imediatamente
+        // Helper de Permissões (Abstração Robusta e Visual)
+        const requestNativePermission = (permissionName, successText, errorText) => {
+            return new Promise((resolve) => {
+                // Timeout de Segurança (3s) - Impede bloqueio se o plugin falhar
+                const safetyTimer = setTimeout(() => {
+                    console.warn(`[Onboard] Timeout de segurança: ${permissionName}`);
+                    btn.textContent = "Avançar"; 
+                    resolve(false);
+                }, 3000);
 
-        // --- LÓGICA DE ONBOARDING ---
-        function initOnboarding() {
-            const slides = ['slide-welcome', 'slide-location', 'slide-notification', 'slide-finish'];
-            const dots = document.querySelectorAll('.dot');
+                // Fallback para Browser (Desenvolvimento)
+                if (!isDeviceReady || !window.cordova) {
+                    console.log(`[DEV] Permissão simulada: ${permissionName}`);
+                    clearTimeout(safetyTimer);
+                    setTimeout(() => {
+                        btn.textContent = successText;
+                        btn.style.backgroundColor = "#34C759"; // Verde
+                        resolve(true);
+                    }, 500);
+                    return;
+                }
 
-            // Helper para feedback tátil
-            const vibrate = () => {
-                if (navigator.vibrate) navigator.vibrate(10);
-            };
-            
-            const showSlide = (index) => {
-                slides.forEach((id, i) => {
-                    const el = document.getElementById(id);
-                    if (i === index) el.classList.add('active');
-                    else el.classList.remove('active');
+                const permissions = window.cordova.plugins.permissions;
 
-                    if (dots[i]) {
-                        if (i === index) dots[i].classList.add('active');
-                        else dots[i].classList.remove('active');
+                // Solicita permissão diretamente (Sem lógica complexa)
+                permissions.requestPermission(
+                    permissionName,
+                    (status) => {
+                        clearTimeout(safetyTimer);
+                        if (status && status.hasPermission) {
+                            btn.textContent = successText;
+                            btn.style.backgroundColor = "#34C759"; // Verde
+                            resolve(true);
+                        } else {
+                            btn.textContent = errorText;
+                            btn.style.backgroundColor = "#FF3B30"; // Vermelho
+                            resolve(false);
+                        }
+                    },
+                    (error) => {
+                        clearTimeout(safetyTimer);
+                        console.warn(`[Onboard] Erro plugin: ${error}`);
+                        btn.textContent = "Erro (Avançar)";
+                        resolve(false);
                     }
+                );
+            });
+        };
+
+        // Atualiza UI baseada na posição do scroll
+        const updateUI = () => {
+            const width = slider.clientWidth;
+            const scrollPos = slider.scrollLeft;
+            // Calcula o índice atual baseado no scroll
+            const newIndex = Math.round(scrollPos / width);
+
+            if (newIndex !== currentIndex) {
+                currentIndex = newIndex;
+                vibrate(10); // Feedback tátil leve ao trocar de slide
+
+                // Limpa estilos inline (cores de sucesso/erro) ao mudar de slide
+                btn.style.backgroundColor = "";
+                btn.disabled = false;
+
+                // Sincroniza Dots
+                dots.forEach((dot, i) => {
+                    if (i === currentIndex) dot.classList.add('active');
+                    else dot.classList.remove('active');
                 });
 
-                // Efeito Parallax no Fundo
-                const bg = document.getElementById('parallax-bg');
-                if (bg) {
-                    const offset = (index * 4) - 6; // Move de -6% a +6%
-                    bg.style.transform = `translate(${offset}%, ${offset}%)`;
+                // Máquina de Estados do Botão
+                if (currentIndex === 0) {
+                    btn.textContent = "Começar";
+                    btn.classList.remove('primary');
+                } else if (currentIndex === 1) {
+                    btn.textContent = "Permitir Localização";
+                    btn.classList.add('primary');
+                } else if (currentIndex === 2) {
+                    btn.textContent = "Permitir Notificações";
+                    btn.classList.add('primary');
                 }
-            };
+            }
+        };
 
-            const btnStart = document.getElementById('btn-start-onboarding');
-            if(btnStart) btnStart.onclick = () => { vibrate(); showSlide(1); };
+        // Função de Scroll Seguro
+        const scrollToSlide = (index) => {
+            slider.scrollTo({
+                left: slider.clientWidth * index,
+                behavior: 'smooth'
+            });
+        };
 
-            const btnLoc = document.getElementById('btn-allow-location');
-            if(btnLoc) btnLoc.onclick = () => {
-                vibrate();
-                if (window.cordova && window.cordova.plugins && window.cordova.plugins.permissions) {
-                    const permissions = window.cordova.plugins.permissions;
-                    const list = [
-                        permissions.ACCESS_COARSE_LOCATION,
-                        permissions.ACCESS_FINE_LOCATION
-                    ];
-                    permissions.requestPermissions(list, 
-                        () => showSlide(2), 
-                        (err) => { console.warn('Location permission error:', err); showSlide(2); }
-                    );
-                } else {
-                    // Fallback navegador
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(() => showSlide(2), (err) => { console.warn('Location error:', err); showSlide(2); });
-                    } else {
-                        showSlide(2);
-                    }
-                }
-            };
+        // Ouve o evento de scroll (nativo e performático)
+        slider.addEventListener('scroll', updateUI, { passive: true });
 
-            const btnNotif = document.getElementById('btn-allow-notification');
-            if(btnNotif) btnNotif.onclick = () => {
-                vibrate();
-                if (window.cordova && window.cordova.plugins && window.cordova.plugins.permissions) {
-                    const permissions = window.cordova.plugins.permissions;
-                    const p = 'android.permission.POST_NOTIFICATIONS';
-                    
-                    // Verifica status antes de solicitar (Evita delay se já permitido ou Android < 13)
-                    permissions.checkPermission(p, (status) => {
-                        if (status.hasPermission) {
-                            localStorage.setItem('notifications_enabled', 'true');
-                            showSlide(3);
-                        } else {
-                            permissions.requestPermission(p, 
-                                () => {
-                                    localStorage.setItem('notifications_enabled', 'true');
-                                    showSlide(3);
-                                }, 
-                                (err) => { console.warn('Notification permission error:', err); showSlide(3); }
-                            );
-                        }
-                    }, (err) => {
-                        // Fallback se check falhar
-                        permissions.requestPermission(p, () => showSlide(3), () => showSlide(3));
-                    });
-                } else {
-                    if ('Notification' in window) {
-                        Notification.requestPermission().then(() => showSlide(3)).catch(() => showSlide(3));
-                    } else {
-                        showSlide(3);
-                    }
-                }
-            };
+        // Lógica Principal do Botão
+        btn.addEventListener('click', async () => {
+            vibrate(10);
 
-            const btnFinish = document.getElementById('btn-finish-onboarding');
-            if(btnFinish) btnFinish.onclick = () => {
-                vibrate();
-                localStorage.setItem("onboard_done", "true");
-                window.location.replace("app.html");
-            };
-        }
+            if (currentIndex === 0) {
+                // Slide 1 -> 2
+                scrollToSlide(1);
+            } 
+            else if (currentIndex === 1) {
+                // Slide 2 -> Pedir Localização
+                btn.disabled = true;
+                btn.textContent = "Aguardando...";
+                
+                // Usa a constante do plugin se disponível, ou string direta
+                const perm = window.cordova?.plugins?.permissions?.ACCESS_FINE_LOCATION || 'android.permission.ACCESS_FINE_LOCATION';
+                
+                await requestNativePermission(perm, "✓ Localização Aceite", "✕ Localização Negada");
+                
+                // Delay visual para leitura
+                setTimeout(() => {
+                    scrollToSlide(2);
+                }, 1000);
+            } 
+            else if (currentIndex === 2) {
+                // Slide 3 -> Pedir Notificações
+                btn.disabled = true;
+                btn.textContent = "Aguardando...";
 
-        document.addEventListener('deviceready', initOnboarding, false);
-        if (!window.cordova) window.onload = initOnboarding;
+                // Permissão Android 13+ (POST_NOTIFICATIONS)
+                const perm = 'android.permission.POST_NOTIFICATIONS';
+
+                await requestNativePermission(perm, "✓ Notificações Ativas", "✕ Notificações Negadas");
+
+                // Finaliza Onboarding
+                setTimeout(() => {
+                    vibrate([10, 50, 10]); 
+                    localStorage.setItem('onboard_done', 'true');
+                    window.location.replace('app.html');
+                }, 1000);
+            }
+        });
     </script>
 </body>
 </html>

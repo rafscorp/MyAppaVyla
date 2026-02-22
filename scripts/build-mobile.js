@@ -73,6 +73,24 @@ if (fs.existsSync(pushPluginGradle)) {
     }
 }
 
+// PATCH: Correção automática para @capacitor/haptics com Gradle 8+
+const hapticsPluginGradle = path.join(rootDir, 'node_modules/@capacitor/haptics/android/build.gradle');
+if (fs.existsSync(hapticsPluginGradle)) {
+    console.log('\n\x1b[33m➤ Aplicando patch no plugin Haptics...\x1b[0m');
+    try {
+        let gradleContent = fs.readFileSync(hapticsPluginGradle, 'utf8');
+        if (gradleContent.includes('proguard-android.txt')) {
+            gradleContent = gradleContent.replace('proguard-android.txt', 'proguard-android-optimize.txt');
+            fs.writeFileSync(hapticsPluginGradle, gradleContent);
+            console.log('\x1b[32m✅ Plugin Haptics corrigido para suportar R8/Gradle 8+\x1b[0m');
+        } else {
+            console.log('\x1b[90mℹ️ Plugin Haptics já estava corrigido.\x1b[0m');
+        }
+    } catch (e) {
+        console.warn('\x1b[31m⚠️ Falha ao aplicar patch no plugin Haptics:\x1b[0m', e.message);
+    }
+}
+
 // 3. Sincronização Capacitor
 // Copia a pasta 'dist' para dentro do projeto Android/iOS
 runStep('npx cap sync', 'Sincronizando assets com projeto nativo');
