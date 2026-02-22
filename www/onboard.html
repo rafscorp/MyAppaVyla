@@ -3,355 +3,455 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, viewport-fit=cover">
-    <title>Bem-vindo</title>
+    <title>Configuração</title>
     <style>
-        /* --- DESIGN SYSTEM PREMIUM --- */
         :root {
-            --primary: #007AFF;
-            --bg: #000000;
-            --text: #FFFFFF;
+            --ui-scale: 1;
+            --accent-color: #0A84FF; 
+            --accent-dark: #0066CC;
+            --success-color: #30D158;
+            --success-dark: #24A343;
+            
+            /* Variáveis que mudam com o tema Claro/Escuro */
+            --bg-color: #000000;
+            --card-bg: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #AEAEB2;
+            --icon-bg: #2C2C2E;
+            --border-color: rgba(255,255,255,0.1);
+        }
+
+        /* Classe de Tema Claro (Invertido no Onboard) */
+        body.light-mode {
+            --bg-color: #F2F2F7;
+            --card-bg: #FFFFFF;
+            --text-primary: #000000;
             --text-secondary: #8E8E93;
-            --surface: #1C1C1E;
+            --icon-bg: #E5E5EA;
+            --border-color: rgba(0,0,0,0.1);
         }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: var(--text);
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            user-select: none;
+
+        * {
             -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            box-sizing: border-box;
         }
 
-        /* --- SLIDER COM SCROLL SNAP (Nativo & Fluido) --- */
-        .onboard-slider {
-            flex: 75; /* Ocupa 75% da altura */
-            display: flex;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scroll-snap-type: x mandatory; /* A mágica do snap nativo */
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
+        body {
+            margin: 0; padding: 0; 
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            overflow: hidden; 
+            width: 100%; height: 100%;
+            user-select: none; -webkit-user-select: none;
+            transition: background-color 0.4s ease; /* Transição suave de tema */
+        }
+
+        .onboarding-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; z-index: 100;
+        }
+
+        .onboarding-slide {
+            position: absolute; top: 45%; left: 50%;
+            transform: translate(-50%, -35%) scale(0.92);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            width: 86%; max-width: calc(350px * var(--ui-scale));
+            opacity: 0; visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            pointer-events: none;
+        }
+
+        .onboarding-slide.active {
+            opacity: 1; visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+
+        .icon-container {
+            width: calc(110px * var(--ui-scale)); 
+            height: calc(110px * var(--ui-scale));
+            background: var(--icon-bg);
+            border-radius: 32px;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: calc(35px * var(--ui-scale));
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15), inset 0 2px 3px rgba(255, 255, 255, 0.05);
+            position: relative;
+            transition: background-color 0.4s ease;
+        }
+
+        .premium-svg {
+            width: 60%; height: 60%;
+            filter: drop-shadow(0 0 15px var(--accent-color));
+            transition: filter 0.4s ease;
         }
         
-        .onboard-slider::-webkit-scrollbar {
-            display: none; /* Chrome/Safari */
+        .premium-svg.success {
+            filter: drop-shadow(0 0 15px var(--success-color));
         }
 
-        /* Slide Individual */
-        .slide {
-            min-width: 100%;
-            height: 100%;
-            scroll-snap-align: center; /* Ponto de paragem */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            box-sizing: border-box;
-            text-align: center;
+        h1 { 
+            color: var(--text-primary); font-size: calc(28px * var(--ui-scale)); 
+            font-weight: 800; margin: 0 0 calc(12px * var(--ui-scale)) 0; 
+            letter-spacing: -0.8px; transition: color 0.4s ease;
+        }
+        p.subtitle { 
+            color: var(--text-secondary); font-size: calc(16px * var(--ui-scale)); 
+            line-height: 1.5; margin: 0 0 calc(35px * var(--ui-scale)) 0;
+            font-weight: 400; transition: color 0.4s ease;
         }
 
-        /* Conteúdo Visual */
-        .slide-image {
-            width: 80%;
-            max-width: 280px;
-            height: auto;
-            margin-bottom: 40px;
-            /* Sombra suave para profundidade */
-            filter: drop-shadow(0 10px 20px rgba(0,122,255,0.15));
-            /* Filtro para colorir os SVGs pretos para o tema */
-            transition: transform 0.5s ease;
-        }
-
-        .slide h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0 0 16px 0;
-            line-height: 1.2;
-            /* Gradiente sutil no texto */
-            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .slide p {
-            font-size: 17px;
-            line-height: 1.5;
-            color: var(--text-secondary);
-            margin: 0;
-            max-width: 300px;
-        }
-
-        /* --- ÁREA DE CONTROLO (Bottom 30%) --- */
-        .controls-area {
-            flex: 25; /* 25% da altura */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 40px 50px;
-            /* Gradiente para suavizar a transição do fundo */
-            background: linear-gradient(to top, rgba(0,0,0,1) 20%, rgba(0,0,0,0));
-            z-index: 10;
-        }
-
-        /* Indicadores (Dots) */
-        .dots-container {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: rgba(255,255,255,0.2);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        .dot.active {
-            width: 24px; /* Estica a bolinha ativa */
-            background-color: var(--primary);
-            border-radius: 4px;
-        }
-
-        /* Botão de Ação Principal */
-        .action-btn {
+        /* CONFIGURAÇÕES DE TEMA INLINE */
+        .theme-config-box {
             width: 100%;
-            height: 56px;
-            border-radius: 28px;
-            border: none;
-            background: var(--surface);
-            color: var(--text);
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: calc(20px * var(--ui-scale));
+            padding: calc(15px * var(--ui-scale));
+            margin-bottom: calc(30px * var(--ui-scale));
+            display: flex; flex-direction: column; gap: calc(15px * var(--ui-scale));
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            transition: background 0.4s ease, border-color 0.4s ease;
         }
 
-        .action-btn:active {
-            transform: scale(0.96);
+        .config-row {
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--text-primary); font-weight: 600; font-size: calc(15px * var(--ui-scale));
+            transition: color 0.4s ease;
         }
 
-        /* Estado Call to Action (Slide Final) */
-        .action-btn.primary {
-            background: var(--primary);
+        .theme-selector { display: flex; gap: calc(12px * var(--ui-scale)); }
+        
+        .theme-option {
+            width: calc(28px * var(--ui-scale)); height: calc(28px * var(--ui-scale));
+            border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .theme-option.active {
+            transform: scale(1.2); border-color: var(--text-primary);
+        }
+
+        /* TOGGLE SWITCH NATIVO */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--text-secondary); transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .modal-action-btn {
+            width: 100%; 
+            background: var(--accent-color);
+            border: none; border-radius: 18px;
+            height: calc(58px * var(--ui-scale)); color: #fff; font-weight: 700;
+            font-size: calc(17px * var(--ui-scale)); cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s, background-color 0.4s ease;
+        }
+        .modal-action-btn:active { transform: scale(0.96); }
+
+        .btn-success { background: var(--success-color); }
+
+        .onboarding-dots { 
+            position: absolute; bottom: calc(55px * var(--ui-scale)); 
+            display: flex; gap: 10px; z-index: 101; 
+        }
+        .dot { 
+            width: 8px; height: 8px; border-radius: 4px; 
+            background-color: rgba(150, 150, 150, 0.3); 
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .dot.active { 
+            width: 26px; background-color: var(--accent-color); 
+        }
+
+        /* Notificação Premium de Permissão Negada */
+        .permission-toast {
+            position: fixed;
+            top: -100px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 59, 48, 0.3); /* Vermelho suave */
+            border-radius: 16px;
+            padding: 16px 24px;
             color: #fff;
-            box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            width: 90%;
+            max-width: 350px;
+            transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-
-        /* Estado de Carregamento/Espera */
-        .action-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
+        .permission-toast.visible {
+            top: 20px;
         }
     </style>
 </head>
 <body>
-    <!-- Slider Container -->
-    <div class="onboard-slider" id="slider">
-        <!-- Slide 1: Bem-vindo -->
-        <div class="slide">
-            <!-- Ícone Carro -->
-            <img src="img/car.svg" class="slide-image" style="filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);">
-            <h1>Bem-vindo ao<br>MyAppaVyla</h1>
-            <p>O controlo total do seu veículo. Vamos configurar o seu dispositivo em poucos passos.</p>
+    
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="dynamicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:var(--text-primary);stop-opacity:0.3" />
+                <stop offset="100%" style="stop-color:var(--accent-color);stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#54E67B;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:var(--success-color);stop-opacity:1" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div id="onboarding-screen" class="onboarding-overlay">
+        
+        <div class="onboarding-slide active" id="slide-welcome">
+            <div class="icon-container">
+                <svg class="premium-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 24C4 12.9543 12.9543 4 24 4C35.0457 4 44 12.9543 44 24V40C44 42.2091 42.2091 44 40 44H8C5.79086 44 4 42.2091 4 40V24Z" fill="none" stroke="url(#dynamicGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M24 16V24L29 29" stroke="url(#dynamicGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="24" cy="24" r="4" fill="url(#dynamicGradient)"/>
+                </svg>
+            </div>
+            <h1>Bem-vindo a Bordo</h1>
+            <p class="subtitle">Assuma o controlo total da sua frota. Vamos preparar o seu cockpit digital.</p>
+            <button class="modal-action-btn" id="btn-start-onboarding">Iniciar Configuração</button>
         </div>
 
-        <!-- Slide 2: Localização -->
-        <div class="slide">
-            <img src="img/location.svg" class="slide-image" style="filter: invert(34%) sepia(98%) saturate(2362%) hue-rotate(201deg) brightness(101%) contrast(105%);">
-            <h1>Rastreio Exato</h1>
-            <p>Precisamos de acesso à sua localização para mostrar a distância entre si e os seus veículos.</p>
+        <div class="onboarding-slide" id="slide-theme">
+            <div class="icon-container">
+                <svg class="premium-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 4C12.95 4 4 12.95 4 24C4 35.05 12.95 44 24 44C27.31 44 30 41.31 30 38C30 36.5 29.45 35.14 28.56 34.09C28.16 33.6 27.91 32.96 27.91 32.27C27.91 30.79 29.11 29.6 30.59 29.6H34C39.52 29.6 44 25.12 44 19.6C44 11 35.05 4 24 4Z" fill="none" stroke="url(#dynamicGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="14" cy="20" r="3" fill="url(#dynamicGradient)"/>
+                    <circle cx="20" cy="12" r="3" fill="url(#dynamicGradient)"/>
+                    <circle cx="28" cy="12" r="3" fill="url(#dynamicGradient)"/>
+                    <circle cx="34" cy="20" r="3" fill="url(#dynamicGradient)"/>
+                </svg>
+            </div>
+            <h1>O seu estilo</h1>
+            <p class="subtitle">Personalize a aparência da aplicação para se adequar ao seu gosto.</p>
+            
+            <div class="theme-config-box">
+                <div class="config-row">
+                    <span>Modo Escuro</span>
+                    <label class="switch">
+                        <input type="checkbox" id="onboard-dark-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="config-row" style="margin-top: 5px;">
+                    <span>Cor Destaque</span>
+                    <div class="theme-selector">
+                        <div class="theme-option active" data-theme="theme-blue" data-hex="#0A84FF" style="background: #0A84FF;"></div>
+                        <div class="theme-option" data-theme="theme-red" data-hex="#FF453A" style="background: #FF453A;"></div>
+                        <div class="theme-option" data-theme="theme-green" data-hex="#30D158" style="background: #30D158;"></div>
+                        <div class="theme-option" data-theme="theme-gold" data-hex="#FFD60A" style="background: #FFD60A;"></div>
+                        <div class="theme-option" data-theme="theme-purple" data-hex="#BF5AF2" style="background: #BF5AF2;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="modal-action-btn" id="btn-save-theme">Continuar</button>
+        </div>
+        
+        <div class="onboarding-slide" id="slide-location">
+            <div class="icon-container">
+                <svg class="premium-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 4C15.1634 4 8 11.1634 8 20C8 29.5 22 42 24 44C26 42 40 29.5 40 20C40 11.1634 32.8366 4 24 4Z" fill="none" stroke="url(#dynamicGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="24" cy="20" r="7" fill="none" stroke="url(#dynamicGradient)" stroke-width="3"/>
+                    <circle cx="24" cy="20" r="3" fill="url(#dynamicGradient)"/>
+                </svg>
+            </div>
+            <h1>Precisão de GPS</h1>
+            <p class="subtitle">Ative a localização para visualização de rotas em tempo real e cálculo exato de distâncias.</p>
+            <button class="modal-action-btn" id="btn-allow-location">Permitir Acesso GPS</button>
+        </div>
+        
+        <div class="onboarding-slide" id="slide-notification">
+            <div class="icon-container">
+                <svg class="premium-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 4C18 4 14 8 14 14V21C14 24.5 12 28 10 30H38C36 28 34 24.5 34 21V14C34 8 30 4 24 4Z" fill="none" stroke="url(#dynamicGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M20 36C20 38.2091 21.7909 40 24 40C26.2091 40 28 38.2091 28 36" stroke="url(#dynamicGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1>Alertas Críticos</h1>
+            <p class="subtitle">Receba avisos instantâneos de ignição, movimento não autorizado ou saída de perímetro.</p>
+            <button class="modal-action-btn" id="btn-allow-notification">Ativar Notificações</button>
+        </div>
+        
+        <div class="onboarding-slide" id="slide-finish">
+            <div class="icon-container">
+                <svg class="premium-svg success" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="url(#greenGradient)" stroke-width="3"/>
+                    <path d="M14 24L20 30L34 16" fill="none" stroke="url(#greenGradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1>Tudo Configurado!</h1>
+            <p class="subtitle">O sistema está pronto. Adicione o seu primeiro veículo e inicie a monitorização.</p>
+            <button class="modal-action-btn btn-success" id="btn-finish-onboarding">Aceder à Garagem</button>
         </div>
 
-        <!-- Slide 3: Notificações -->
-        <div class="slide">
-            <!-- Ícone Sino (Filtro verde para sucesso/finalização) -->
-            <img src="img/notifications.svg" class="slide-image" style="filter: invert(66%) sepia(50%) saturate(5463%) hue-rotate(93deg) brightness(98%) contrast(92%);">
-            <h1>Mantenha-se Alerta</h1>
-            <p>Ative as notificações para receber avisos de movimento ou ignição ligada.</p>
+        <div class="onboarding-dots">
+            <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
     </div>
 
-    <!-- Controls Area -->
-    <div class="controls-area">
-        <div class="dots-container">
-            <div class="dot active"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-        <button id="action-btn" class="action-btn">Começar</button>
-    </div>
+    <!-- Container da Notificação -->
+    <div id="perm-toast" class="permission-toast"></div>
 
-    <script>
-        // --- ESTADO DO DISPOSITIVO ---
-        let isDeviceReady = false;
-        document.addEventListener('deviceready', () => {
-            isDeviceReady = true;
-            console.log("[Onboard] Device Ready - Permissões Nativas Ativas");
-        }, false);
+    <script type="module">
+        import { Geolocation } from '@capacitor/geolocation';
+        import { PushNotifications } from '@capacitor/push-notifications';
 
-        // --- LÓGICA DE INTERAÇÃO ---
-        const slider = document.getElementById('slider');
-        const btn = document.getElementById('action-btn');
-        const dots = document.querySelectorAll('.dot');
-        let currentIndex = 0;
-        const totalSlides = 3;
+        // --- SISTEMA DE PREVIEW DE TEMA ---
+        const darkToggle = document.getElementById('onboard-dark-toggle');
+        const themeOptions = document.querySelectorAll('.theme-option');
 
-        // Helper de Vibração (Haptics)
-        const vibrate = (pattern) => {
-            if (navigator.vibrate) navigator.vibrate(pattern);
-        };
+        // Valores Iniciais (Padrão: Escuro + Azul)
+        let selectedThemeMode = 'dark';
+        let selectedAppTheme = 'theme-blue';
+        localStorage.setItem('theme', selectedThemeMode);
+        localStorage.setItem('app_theme', selectedAppTheme);
 
-        // Helper de Permissões (Abstração Robusta e Visual)
-        const requestNativePermission = (permissionName, successText, errorText) => {
-            return new Promise((resolve) => {
-                // Timeout de Segurança (3s) - Impede bloqueio se o plugin falhar
-                const safetyTimer = setTimeout(() => {
-                    console.warn(`[Onboard] Timeout de segurança: ${permissionName}`);
-                    btn.textContent = "Avançar"; 
-                    resolve(false);
-                }, 3000);
-
-                // Fallback para Browser (Desenvolvimento)
-                if (!isDeviceReady || !window.cordova) {
-                    console.log(`[DEV] Permissão simulada: ${permissionName}`);
-                    clearTimeout(safetyTimer);
-                    setTimeout(() => {
-                        btn.textContent = successText;
-                        btn.style.backgroundColor = "#34C759"; // Verde
-                        resolve(true);
-                    }, 500);
-                    return;
-                }
-
-                const permissions = window.cordova.plugins.permissions;
-
-                // Solicita permissão diretamente (Sem lógica complexa)
-                permissions.requestPermission(
-                    permissionName,
-                    (status) => {
-                        clearTimeout(safetyTimer);
-                        if (status && status.hasPermission) {
-                            btn.textContent = successText;
-                            btn.style.backgroundColor = "#34C759"; // Verde
-                            resolve(true);
-                        } else {
-                            btn.textContent = errorText;
-                            btn.style.backgroundColor = "#FF3B30"; // Vermelho
-                            resolve(false);
-                        }
-                    },
-                    (error) => {
-                        clearTimeout(safetyTimer);
-                        console.warn(`[Onboard] Erro plugin: ${error}`);
-                        btn.textContent = "Erro (Avançar)";
-                        resolve(false);
-                    }
-                );
-            });
-        };
-
-        // Atualiza UI baseada na posição do scroll
-        const updateUI = () => {
-            const width = slider.clientWidth;
-            const scrollPos = slider.scrollLeft;
-            // Calcula o índice atual baseado no scroll
-            const newIndex = Math.round(scrollPos / width);
-
-            if (newIndex !== currentIndex) {
-                currentIndex = newIndex;
-                vibrate(10); // Feedback tátil leve ao trocar de slide
-
-                // Limpa estilos inline (cores de sucesso/erro) ao mudar de slide
-                btn.style.backgroundColor = "";
-                btn.disabled = false;
-
-                // Sincroniza Dots
-                dots.forEach((dot, i) => {
-                    if (i === currentIndex) dot.classList.add('active');
-                    else dot.classList.remove('active');
-                });
-
-                // Máquina de Estados do Botão
-                if (currentIndex === 0) {
-                    btn.textContent = "Começar";
-                    btn.classList.remove('primary');
-                } else if (currentIndex === 1) {
-                    btn.textContent = "Permitir Localização";
-                    btn.classList.add('primary');
-                } else if (currentIndex === 2) {
-                    btn.textContent = "Permitir Notificações";
-                    btn.classList.add('primary');
-                }
+        darkToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.remove('light-mode');
+                selectedThemeMode = 'dark';
+            } else {
+                document.body.classList.add('light-mode');
+                selectedThemeMode = 'light';
             }
-        };
-
-        // Função de Scroll Seguro
-        const scrollToSlide = (index) => {
-            slider.scrollTo({
-                left: slider.clientWidth * index,
-                behavior: 'smooth'
-            });
-        };
-
-        // Ouve o evento de scroll (nativo e performático)
-        slider.addEventListener('scroll', updateUI, { passive: true });
-
-        // Lógica Principal do Botão
-        btn.addEventListener('click', async () => {
-            vibrate(10);
-
-            if (currentIndex === 0) {
-                // Slide 1 -> 2
-                scrollToSlide(1);
-            } 
-            else if (currentIndex === 1) {
-                // Slide 2 -> Pedir Localização
-                btn.disabled = true;
-                btn.textContent = "Aguardando...";
-                
-                // Usa a constante do plugin se disponível, ou string direta
-                const perm = window.cordova?.plugins?.permissions?.ACCESS_FINE_LOCATION || 'android.permission.ACCESS_FINE_LOCATION';
-                
-                await requestNativePermission(perm, "✓ Localização Aceite", "✕ Localização Negada");
-                
-                // Delay visual para leitura
-                setTimeout(() => {
-                    scrollToSlide(2);
-                }, 1000);
-            } 
-            else if (currentIndex === 2) {
-                // Slide 3 -> Pedir Notificações
-                btn.disabled = true;
-                btn.textContent = "Aguardando...";
-
-                // Permissão Android 13+ (POST_NOTIFICATIONS)
-                const perm = 'android.permission.POST_NOTIFICATIONS';
-
-                await requestNativePermission(perm, "✓ Notificações Ativas", "✕ Notificações Negadas");
-
-                // Finaliza Onboarding
-                setTimeout(() => {
-                    vibrate([10, 50, 10]); 
-                    localStorage.setItem('onboard_done', 'true');
-                    window.location.replace('app.html');
-                }, 1000);
-            }
+            localStorage.setItem('theme', selectedThemeMode);
         });
+
+        themeOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                themeOptions.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                
+                selectedAppTheme = opt.dataset.theme;
+                const hexColor = opt.dataset.hex;
+                
+                // Atualiza a variável CSS nativamente para dar feedback imediato
+                document.documentElement.style.setProperty('--accent-color', hexColor);
+                localStorage.setItem('app_theme', selectedAppTheme);
+            });
+        });
+
+        // --- NAVEGAÇÃO DOS SLIDES ---
+        let currentSlide = 0;
+        const slides = ['slide-welcome', 'slide-theme', 'slide-location', 'slide-notification', 'slide-finish'];
+        const dots = document.querySelectorAll('.dot');
+
+        function advanceToSlide(index) {
+            if (index >= slides.length) return;
+            
+            const nextSlideEl = document.getElementById(slides[index]);
+            const content = nextSlideEl.querySelectorAll('h1, p, .icon-container, .theme-config-box');
+            content.forEach(el => el.style.opacity = '0');
+            
+            document.getElementById(slides[currentSlide]).classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+            
+            currentSlide = index;
+            nextSlideEl.classList.add('active');
+            dots[currentSlide].classList.add('active');
+
+            setTimeout(() => {
+                content.forEach((el, i) => {
+                   setTimeout(() => {
+                       el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                       el.style.opacity = '1';
+                       el.style.transform = 'translateY(0)';
+                   }, i * 80); 
+                });
+            }, 300);
+        }
+
+        // Setup inicial das animações
+        document.querySelectorAll('.onboarding-slide h1, .onboarding-slide p, .onboarding-slide .icon-container, .theme-config-box').forEach(el => {
+             el.style.transform = 'translateY(15px)';
+             el.style.opacity = '0';
+        });
+        setTimeout(() => advanceToSlide(0), 100);
+
+        // Helper: Notificação Premium
+        function showPermissionError() {
+            const toast = document.getElementById('perm-toast');
+            toast.innerText = "Acesso Obrigatório: Precisamos dessa permissão para o aplicativo funcionar. Por favor, tente novamente e clique em Permitir.";
+            toast.classList.add('visible');
+            
+            // Vibração de erro (se disponível)
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+
+            setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 4000);
+        }
+
+        // --- MÁQUINA DE ESTADOS DOS BOTÕES ---
+        document.getElementById('btn-start-onboarding').onclick = () => advanceToSlide(1);
+        document.getElementById('btn-save-theme').onclick = () => advanceToSlide(2);
+
+        document.getElementById('btn-allow-location').onclick = async () => {
+            const btn = document.getElementById('btn-allow-location');
+            const originalText = btn.innerText;
+            btn.innerHTML = 'Aguardando...'; 
+            try {
+                // Solicita permissão
+                const perm = await Geolocation.requestPermissions();
+                
+                // Verifica se foi concedida (location pode ser 'granted' ou 'coarse')
+                if (perm.location === 'granted' || perm.location === 'coarse') {
+                    advanceToSlide(3);
+                } else {
+                    throw new Error('Denied');
+                }
+            } catch (error) { 
+                console.error('GPS Denied', error);
+                btn.innerHTML = originalText; // Restaura texto
+                showPermissionError();
+            } 
+        };
+
+        document.getElementById('btn-allow-notification').onclick = async () => {
+            const btn = document.getElementById('btn-allow-notification');
+            const originalText = btn.innerText;
+            btn.innerHTML = 'Aguardando...';
+            try {
+                let perm = await PushNotifications.checkPermissions();
+                if (perm.receive === 'prompt') await PushNotifications.requestPermissions();
+                
+                // Re-check após o prompt
+                perm = await PushNotifications.checkPermissions();
+
+                if (perm.receive === 'granted') {
+                    localStorage.setItem('notifications_enabled', 'true');
+                    advanceToSlide(4);
+                } else {
+                    throw new Error('Denied');
+                }
+            } catch (error) { 
+                console.error('Push Denied', error);
+                btn.innerHTML = originalText; // Restaura texto
+                showPermissionError();
+            }
+        };
+
+        document.getElementById('btn-finish-onboarding').onclick = () => {
+            localStorage.setItem("onboard_done", "true");
+            window.location.replace("app.html");
+        };
+
+        function updateLayoutScaling() {
+            let scale = Math.sqrt((window.innerWidth * window.innerHeight) / (375 * 812)) * 0.9;
+            document.documentElement.style.setProperty('--ui-scale', Math.max(0.75, Math.min(scale, 1.6)));
+        }
+        window.addEventListener('resize', updateLayoutScaling);
+        updateLayoutScaling();
     </script>
 </body>
 </html>

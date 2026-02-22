@@ -1,6 +1,7 @@
 import { ImageCache } from './ImageCache.js';
 import { FipeApi } from './FipeApi.js';
 import { GarageRepository } from './GarageRepository.js';
+import { RemoteStorage } from './RemoteStorage.js';
 import { MapRenderer } from './MapRenderer.js';
 import { Logger } from './Logger.js';
 import { UIQueueManager } from './UIQueueManager.js';
@@ -37,6 +38,7 @@ export class UIManager {
         this.lastRemovedCar = null;
         this.toastTimeout = null;
         this.virtualScroller = null;
+        this.remoteStorage = null;
         
         // State tracking for tab switching stability
         this.currentTab = null;
@@ -68,6 +70,11 @@ export class UIManager {
             this.widgets = document.querySelectorAll('.widget');
             this.repository = new GarageRepository();
             await this.repository.init(); // 🔄 WAIT FOR REPO: Garante sync configurado
+            
+            // Inicializa Remote Storage (Supabase)
+            this.remoteStorage = new RemoteStorage();
+            this.remoteStorage.setupAutoSync(() => this.garage);
+
             this.mapRenderer = new MapRenderer('map-container');
             
             // Executa lógica funcional
@@ -826,15 +833,6 @@ export class UIManager {
         }
 
         this.initCropLogic();
-
-        // Skeleton Loader Logic (0.7s delay)
-        setTimeout(() => {
-            const skeleton = document.getElementById('app-skeleton');
-            if(skeleton) {
-                skeleton.style.opacity = '0';
-                setTimeout(() => skeleton.remove(), 500);
-            }
-        }, 700);
     }
 
     initCropLogic() {
@@ -1625,6 +1623,11 @@ export class UIManager {
         this.garage.push(data);
         this.repository.save(this.garage);
         this.renderGarage();
+        
+        // Persistência na Nuvem (Background)
+        if (this.remoteStorage) {
+            this.remoteStorage.save(this.garage).catch(e => console.warn('[Cloud] Save failed', e));
+        }
 
         return true; // Retorna true indicando sucesso
     }
@@ -2229,7 +2232,23 @@ export class UIManager {
     async refreshGarageData() {
         // Simula delay mínimo para feedback visual e força recarregamento
         await new Promise(r => setTimeout(r, 800));
-        await this.loadCarsFromStorage();
+        
+        // Sincronização Real com a Nuvem
+        if (this.remoteStorage) {
+            try {
+                const cloudData = await this.remoteStorage.load();
+                if (cloudData && Array.isArray(cloudData)) {
+                    this.garage = cloudData;
+                    this.repository.save(this.garage);
+                }
+            } catch (e) {
+                console.warn('[Cloud] Refresh failed:', e);
+            }
+        } else {
+            this.garage = await this.repository.load();
+        }
+        
+        this.renderGarage();
         this.showToast('Dados sincronizados');
     }
 
@@ -2564,6 +2583,12 @@ export class UIManager {
                 }
 
                 this.repository.save(this.garage);
+                
+                // Persistência na Nuvem
+                if (this.remoteStorage) {
+                    this.remoteStorage.save(this.garage);
+                }
+
                 this.renderGarage();
                 this.showToast('Alterações salvas');
                 this.closeEditModal();
@@ -2672,6 +2697,12 @@ export class UIManager {
                     ImageCache.delete(removed.imgId);
                 }
                 this.repository.save(this.garage);
+                
+                // Persistência na Nuvem
+                if (this.remoteStorage) {
+                    this.remoteStorage.save(this.garage);
+                }
+
                 this.showUndoMessage(removed, index);
 
                 this.renderGarage();
@@ -2698,6 +2729,12 @@ export class UIManager {
             // Reinsere o carro na garagem
             this.garage.splice(originalIndex, 0, car);
             this.repository.save(this.garage);
+            
+            // Persistência na Nuvem
+            if (this.remoteStorage) {
+                this.remoteStorage.save(this.garage);
+            }
+
             this.renderGarage();
 
             // Limpa o estado de "desfeito"

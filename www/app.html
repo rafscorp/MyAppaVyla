@@ -12,6 +12,14 @@
     
     <title>HyperEngine Mobile</title>
     <script>
+        // Anti-FOUC: Injeção Imediata de Tema
+        (function() {
+            const theme = localStorage.getItem('theme') || 'dark';
+            const bg = theme === 'dark' ? '#000000' : '#F2F2F7';
+            document.documentElement.style.setProperty('--bg-color', bg);
+        })();
+    </script>
+    <script>
         if (!localStorage.getItem("onboard_done")) {
             window.location.replace("onboard.html");
         }
