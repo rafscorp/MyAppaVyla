@@ -39,6 +39,7 @@ export class UIManager {
         this.toastTimeout = null;
         this.virtualScroller = null;
         this.remoteStorage = null;
+        this.currentDetailOrigin = null; // Referência para animação de volta
         
         // State tracking for tab switching stability
         this.currentTab = null;
@@ -355,20 +356,26 @@ export class UIManager {
         // Lógica do Modo Escuro
         const darkModeToggle = document.getElementById('dark-mode-toggle');
         if (darkModeToggle) {
-            const isDark = localStorage.getItem('theme') === 'dark';
-            if (isDark) {
-                document.body.classList.add('dark-mode');
+            // Padrão: Dark Mode (sem classe) | Light Mode (classe .light-mode)
+            const isLight = localStorage.getItem('theme') === 'light';
+            if (isLight) {
+                document.documentElement.classList.add('light-mode');
+                darkModeToggle.checked = false;
+            } else {
+                document.documentElement.classList.remove('light-mode');
                 darkModeToggle.checked = true;
             }
 
             darkModeToggle.addEventListener('change', (e) => {
                 if (e.target.checked) {
-                    document.body.classList.add('dark-mode');
+                    document.documentElement.classList.remove('light-mode');
                     localStorage.setItem('theme', 'dark');
+                    document.documentElement.style.setProperty('--bg-color', '#000000');
                     this.mapRenderer.setTheme(true);
                 } else {
-                    document.body.classList.remove('dark-mode');
+                    document.documentElement.classList.add('light-mode');
                     localStorage.setItem('theme', 'light');
+                    document.documentElement.style.setProperty('--bg-color', '#F2F2F7');
                     this.mapRenderer.setTheme(false);
                 }
             });
@@ -841,6 +848,12 @@ export class UIManager {
             });
         }
 
+        // Listener para fechar detalhes
+        const detailBackBtn = document.getElementById('detail-back-btn');
+        if (detailBackBtn) {
+            this.addSafeClickListener(detailBackBtn, () => this.closeCarDetail());
+        }
+
         this.initCropLogic();
     }
 
@@ -1057,6 +1070,13 @@ export class UIManager {
                     return true;
                 }
                 this.closeEditModal();
+                return true;
+            }
+
+            // Fecha Detalhes do Carro
+            const detailView = document.getElementById('car-detail-view');
+            if (detailView && detailView.classList.contains('active')) {
+                this.closeCarDetail();
                 return true;
             }
 
@@ -2284,6 +2304,14 @@ export class UIManager {
             // Container da Imagem (Topo do Card)
             const imageContainer = document.createElement('div');
             imageContainer.className = 'car-image-container';
+            
+            // CLICK LISTENER PARA DETALHES (SHARED ELEMENT)
+            imageContainer.addEventListener('click', (e) => {
+                // Ignora se clicou nos botões de ação sobrepostos
+                if (e.target.closest('.edit-car-btn') || e.target.closest('.remove-car-btn') || e.target.closest('.car-plate-display')) return;
+                const img = imageContainer.querySelector('img');
+                if (img) this.openCarDetail(car, img);
+            });
 
             // --- Montagem do Conteúdo ---
             const displayName = car.nick ? car.nick : `${car.brand} ${car.model}`.trim();
@@ -2367,6 +2395,77 @@ export class UIManager {
             slot.appendChild(content);
 
             return slot;
+    }
+
+    openCarDetail(car, originElement) {
+        const detailView = document.getElementById('car-detail-view');
+        const heroImg = document.getElementById('detail-hero-img');
+        const title = document.getElementById('detail-title');
+        const subtitle = document.getElementById('detail-subtitle');
+        
+        if (!detailView || !heroImg) return;
+
+        this.currentDetailOrigin = originElement; // Guarda referência para voltar
+        this.vibrate(10);
+
+        // Popula Dados
+        title.textContent = car.nick || `${car.brand} ${car.model}`;
+        subtitle.textContent = car.plate || 'Sem placa';
+        
+        const src = originElement.src;
+        heroImg.src = src;
+
+        // --- FLIP ANIMATION START ---
+        const rect = originElement.getBoundingClientRect();
+        
+        // 1. Cria o Fantasma na posição inicial
+        const ghost = document.createElement('img');
+        ghost.src = src;
+        ghost.className = 'shared-element-ghost';
+        ghost.style.width = `${rect.width}px`;
+        ghost.style.height = `${rect.height}px`;
+        ghost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
+        document.body.appendChild(ghost);
+
+        // 2. Mostra a view de destino (mas esconde a imagem real por enquanto)
+        detailView.classList.add('active');
+        heroImg.classList.remove('visible');
+
+        // 3. Calcula posição final
+        // (Assume-se que o hero ocupa 45vh e largura total, conforme CSS)
+        const targetHeight = window.innerHeight * 0.45;
+        const targetWidth = window.innerWidth;
+        
+        // Força reflow
+        ghost.getBoundingClientRect();
+
+        // 4. Anima o Fantasma
+        requestAnimationFrame(() => {
+            ghost.style.width = `${targetWidth}px`;
+            ghost.style.height = `${targetHeight}px`;
+            ghost.style.transform = `translate(0, 0)`;
+        });
+
+        // 5. Limpeza após animação
+        setTimeout(() => {
+            heroImg.classList.add('visible');
+            ghost.remove();
+        }, 500);
+    }
+
+    closeCarDetail() {
+        const detailView = document.getElementById('car-detail-view');
+        if (!detailView) return;
+
+        // Animação simples de fade-out para fechar (mais performático que reverse FLIP complexo)
+        detailView.classList.remove('active');
+        
+        // Se quiser reverse FLIP, seria necessário criar o ghost novamente a partir do hero
+        // e animar de volta para this.currentDetailOrigin.getBoundingClientRect()
+        
+        setTimeout(() => {
+            document.getElementById('detail-hero-img').classList.remove('visible');
+        }, 300);
     }
 
     updateAppBackground(index) {
@@ -3445,24 +3544,17 @@ export class UIManager {
         const currentArea = width * height;
         
         // Calculate UI_SCALE based on area ratio (Diagonal scaling)
-        // Ajuste: Multiplicador 0.85 (Aumentado novamente para preencher melhor a tela)
         let scale = Math.sqrt(currentArea / BASE_AREA) * 0.85;
         
-        // --- HEIGHT CONSTRAINT LOGIC (Revisão Matemática) ---
-        // Garante que a interface caiba verticalmente, crucial para modo paisagem
-        // Safe Height = 85% da tela (deixa espaço para barras de sistema)
+        // --- HEIGHT CONSTRAINT LOGIC ---
         const safeHeight = height * 0.85;
-        const baseCardHeight = 600; // Altura base aproximada do card principal
+        const baseCardHeight = 600;
         const maxScaleByHeight = safeHeight / baseCardHeight;
 
-        // Se a escala por área for maior que a permitida pela altura, limita pela altura
         if (scale > maxScaleByHeight) scale = maxScaleByHeight;
 
-        // Clamp scale to avoid extremes on weird displays
-        // Ajuste: Mínimo 0.70 para permitir redução maior mas manter legibilidade
         scale = Math.max(0.70, Math.min(scale, 1.8));
         
-        // Apply global CSS variables
         document.documentElement.style.setProperty('--app-scale', scale);
         document.documentElement.style.setProperty('--ui-scale', scale);
         document.documentElement.style.setProperty('--app-width', `${width}px`);

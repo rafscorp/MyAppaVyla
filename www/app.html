@@ -9,15 +9,11 @@
     <script>
         // IIFE Síncrona para definir tema antes do primeiro paint
         (function() {
-            const isDark = localStorage.getItem('theme') !== 'light';
-            const style = document.createElement('style');
-            if (!isDark) {
-                document.documentElement.classList.add('light-mode'); 
-                style.innerHTML = 'html, body { background-color: #F2F2F7 !important; } .skeleton-layer, .skeleton-main-card { background-color: #FFFFFF !important; border-color: rgba(0,0,0,0.1) !important; }';
-            } else {
-                style.innerHTML = 'html, body { background-color: #000000 !important; } .skeleton-layer, .skeleton-main-card { background-color: #1C1C1E !important; border-color: #2C2C2E !important; }';
-            }
-            document.head.appendChild(style);
+            const isLight = localStorage.getItem('theme') === 'light';
+            const bgColor = isLight ? '#F2F2F7' : '#000000';
+            const cardBg = isLight ? '#FFFFFF' : '#1C1C1E';
+            if (isLight) document.documentElement.classList.add('light-mode');
+            document.write('<style>html, body { background-color: ' + bgColor + ' !important; transition: background-color 0.4s ease; } .skeleton-layer, .skeleton-main-card { background-color: ' + cardBg + ' !important; }</style>');
         })();
     </script>
     <meta charset="UTF-8">
@@ -195,6 +191,22 @@
                         <span style="color: var(--text-secondary); font-size: 14px;">v1.0.0</span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- PÁGINA DE DETALHES (SHARED ELEMENT) -->
+        <div id="car-detail-view" class="detail-view">
+            <div class="detail-header">
+                <button id="detail-back-btn" class="nav-arrow back-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+            </div>
+            <div class="detail-hero">
+                <img id="detail-hero-img" src="" alt="">
+            </div>
+            <div class="detail-body">
+                <h1 id="detail-title"></h1>
+                <p id="detail-subtitle"></p>
             </div>
         </div>
 

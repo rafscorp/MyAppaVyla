@@ -27,13 +27,14 @@
         /* Animação do Hypercar */
         .car-path {
             fill: none;
-            stroke: #0A84FF; /* Accent Blue */
-            stroke-width: 1.5;
+            stroke: #0A84FF;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
-            stroke-dasharray: 1200;
-            stroke-dashoffset: 1200;
-            animation: drawCar 3s cubic-bezier(0.4, 0, 0.2, 1) forwards, fillCar 1s ease-out 2.8s forwards;
+            stroke-dasharray: 1500;
+            stroke-dashoffset: 1500;
+            animation: drawCar 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, fillCar 0.8s ease-out 2.3s forwards;
+            filter: drop-shadow(0 0 8px rgba(10, 132, 255, 0.6));
         }
 
         @keyframes drawCar {
@@ -41,7 +42,7 @@
         }
 
         @keyframes fillCar {
-            to { fill: rgba(10, 132, 255, 0.08); }
+            to { fill: rgba(10, 132, 255, 0.15); }
         }
 
         .brand-text {
@@ -64,9 +65,9 @@
 </head>
 <body>
     <div class="splash-container" id="splash">
-        <svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
-            <!-- Hypercar Silhouette Path: Aerodinâmico e detalhado -->
-            <path id="car-path" class="car-path" d="M290,75 L280,60 Q260,35 210,35 L110,35 Q70,35 50,60 L30,75 L20,85 L50,85 A18,18 0 0,1 86,85 L214,85 A18,18 0 0,1 250,85 L280,85 L290,75 Z M110,35 L105,85 M210,35 L215,85 M60,60 L260,60" />
+        <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg">
+            <!-- Hypercar Silhouette: Aerodinâmica Agressiva (Spoiler, Cavas, Farol) -->
+            <path id="car-path" class="car-path" d="M370,105 L365,95 Q350,95 345,85 L330,65 Q300,40 220,40 L140,40 Q90,40 70,75 L50,95 L30,105 L30,115 L80,115 A20,20 0 0,1 120,115 L280,115 A20,20 0 0,1 320,115 L370,115 L370,105 Z M140,40 L135,115 M220,40 L225,115 M70,75 L330,75" />
         </svg>
         <div class="brand-text">VYLA VEHICLE</div>
     </div>

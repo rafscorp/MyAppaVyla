@@ -457,13 +457,15 @@
             btn.style.pointerEvents = 'none';
 
             try {
-                // Tenta pedir permissão
+                // Tenta pedir permissão diretamente.
+                // O sistema operacional decide se mostra o prompt ou nega automaticamente (se já bloqueado).
+                // Isso corrige o ciclo de "falso bloqueio" e garante que a app tente sempre que o utilizador clicar.
                 const perm = await Geolocation.requestPermissions();
                 
                 if (perm.location === 'granted' || perm.location === 'coarse') {
                     advanceToSlide(3);
                 } else {
-                    throw new Error(perm.location); // Lança o estado exato (denied/prompt)
+                    throw new Error('denied');
                 }
             } catch (error) { 
                 console.warn('GPS Status:', error.message);
@@ -476,8 +478,9 @@
                 btn.style.pointerEvents = 'auto';
                 
                 document.getElementById('btn-settings-loc').style.display = 'block';
-                // Mensagem específica baseada no erro
-                showPermissionError("Acesso Obrigatório. Se recusou, ative nas configurações do seu sistema para avançar.");
+                
+                // Mensagem genérica robusta para cobrir tanto recusa simples quanto bloqueio permanente
+                showPermissionError("Acesso negado. Se o alerta não aparecer, ative nas Configurações.");
             } 
         };
 
@@ -490,19 +493,14 @@
             btn.style.pointerEvents = 'none';
 
             try {
-                let perm = await PushNotifications.checkPermissions();
-                
-                // Se ainda não perguntou, pergunta agora
-                if (perm.receive === 'prompt') await PushNotifications.requestPermissions();
-                
-                // Re-check após o prompt
-                perm = await PushNotifications.checkPermissions();
+                // Solicitação direta para garantir resposta atualizada do sistema
+                const perm = await PushNotifications.requestPermissions();
 
                 if (perm.receive === 'granted') {
                     localStorage.setItem('notifications_enabled', 'true');
                     advanceToSlide(4);
                 } else {
-                    throw new Error(perm.receive); // Lança estado (denied)
+                    throw new Error('denied');
                 }
             } catch (error) { 
                 console.warn('Push Status:', error.message);
@@ -515,7 +513,8 @@
                 btn.style.pointerEvents = 'auto';
                 
                 document.getElementById('btn-settings-push').style.display = 'block';
-                showPermissionError("Acesso Obrigatório. Se recusou, ative nas configurações do seu sistema para avançar.");
+                
+                showPermissionError("Notificações desativadas. Habilite nas Configurações para continuar.");
             }
         };
 
