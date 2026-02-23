@@ -2,16 +2,6 @@
 <html lang="pt-BR">
 <head>
     <style>
-        /* PROTEÇÃO ANTI-FOUC: Força fundo preto imediato */
-        html, body { background-color: #000000 !important; }
-        
-        /* Garante que o esqueleto nasça com a cor correta do tema escuro */
-        .skeleton-layer { background-color: #000000 !important; }
-        .skeleton-header-row, .skeleton-main-card, .skeleton-bottom-bar, .skeleton-circle, .skeleton-line { 
-            background-color: #1C1C1E !important; 
-            border-color: #2C2C2E !important; 
-        }
-        
         /* Oculta a UI real até estar pronta */
         #ui-layer { opacity: 0; animation: fadeInApp 0.8s ease-out forwards; }
         @keyframes fadeInApp { to { opacity: 1; } }
@@ -20,11 +10,14 @@
         // IIFE Síncrona para definir tema antes do primeiro paint
         (function() {
             const isDark = localStorage.getItem('theme') !== 'light';
-            if (!isDark) { 
+            const style = document.createElement('style');
+            if (!isDark) {
                 document.documentElement.classList.add('light-mode'); 
-                // Remove a proteção de fundo preto se for tema claro (opcional, mas mantém consistência)
-                // document.documentElement.style.setProperty('--bg-color', '#F2F2F7');
+                style.innerHTML = 'html, body { background-color: #F2F2F7 !important; } .skeleton-layer, .skeleton-main-card { background-color: #FFFFFF !important; border-color: rgba(0,0,0,0.1) !important; }';
+            } else {
+                style.innerHTML = 'html, body { background-color: #000000 !important; } .skeleton-layer, .skeleton-main-card { background-color: #1C1C1E !important; border-color: #2C2C2E !important; }';
             }
+            document.head.appendChild(style);
         })();
     </script>
     <meta charset="UTF-8">

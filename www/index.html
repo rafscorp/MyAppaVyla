@@ -66,25 +66,41 @@
     <div class="splash-container" id="splash">
         <svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
             <!-- Hypercar Silhouette Path: Aerodinâmico e detalhado -->
-            <path class="car-path" d="M290,75 L280,60 Q260,35 210,35 L110,35 Q70,35 50,60 L30,75 L20,85 L50,85 A18,18 0 0,1 86,85 L214,85 A18,18 0 0,1 250,85 L280,85 L290,75 Z M110,35 L105,85 M210,35 L215,85 M60,60 L260,60" />
+            <path id="car-path" class="car-path" d="M290,75 L280,60 Q260,35 210,35 L110,35 Q70,35 50,60 L30,75 L20,85 L50,85 A18,18 0 0,1 86,85 L214,85 A18,18 0 0,1 250,85 L280,85 L290,75 Z M110,35 L105,85 M210,35 L215,85 M60,60 L260,60" />
         </svg>
         <div class="brand-text">VYLA VEHICLE</div>
     </div>
 
     <script>
         window.onload = function() {
+            // 1. Personalização de Cor (Tema)
+            const theme = localStorage.getItem('app_theme') || 'theme-blue';
+            const colors = {
+                'theme-blue': '#0A84FF',
+                'theme-red': '#FF453A',
+                'theme-green': '#30D158',
+                'theme-gold': '#FFD60A',
+                'theme-purple': '#BF5AF2'
+            };
+            const accentColor = colors[theme] || '#0A84FF';
+            document.getElementById('car-path').style.stroke = accentColor;
+
+            // 2. Otimização de Tempo (UX)
+            const isOnboardDone = localStorage.getItem("onboard_done") === "true";
+            const splashDuration = isOnboardDone ? 2000 : 4500;
+
             setTimeout(function() {
                 document.body.style.transition = "opacity 0.5s ease";
                 document.body.style.opacity = '0';
                 
                 setTimeout(function() {
-                    if (localStorage.getItem("onboard_done") === "true") {
+                    if (isOnboardDone) {
                         window.location.replace("app.html");
                     } else {
                         window.location.replace("onboard.html");
                     }
                 }, 500); // Tempo para o fade out
-            }, 4500); // Duração exata da animação
+            }, splashDuration);
         };
     </script>
 </body>

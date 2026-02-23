@@ -1502,7 +1502,7 @@ body.dark-mode span.ripple {
     padding: calc(32px * var(--ui-scale)) calc(24px * var(--ui-scale));
     transform: scale(0.92) translate3d(0, calc(15px * var(--ui-scale)), 0); /* Começa um pouco menor e mais baixo */
     opacity: 0;
-    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; /* Easing premium */
+    transition: transform 0.3s ease, opacity 0.3s ease; /* Suavização solicitada */
     /* box-shadow: 0 15px 30px rgba(0,0,0,0.8); REMOVIDO */
     display: flex;
     flex-direction: column;

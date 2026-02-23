@@ -341,6 +341,7 @@
         import { Geolocation } from '@capacitor/geolocation';
         import { PushNotifications } from '@capacitor/push-notifications';
         import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
+        import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
         // --- SISTEMA DE PREVIEW DE TEMA ---
         const darkToggle = document.getElementById('onboard-dark-toggle');
@@ -435,8 +436,8 @@
             toast.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>${message || "Acesso necessário para continuar."}</span>`;
             toast.classList.add('visible');
             
-            // Vibração de erro (se disponível)
-            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            // Vibração de erro (Haptics Nativo)
+            Haptics.impact({ style: ImpactStyle.Heavy });
 
             setTimeout(() => {
                 toast.classList.remove('visible');
