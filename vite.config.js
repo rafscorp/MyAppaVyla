@@ -8,7 +8,7 @@ export default defineConfig({
   root: 'www',
   publicDir: 'public',
   base: './',
-  plugins: [],
+  plugins: [], // Plugins removidos para estabilidade
   build: {
     outDir: '../dist',
     emptyOutDir: true,

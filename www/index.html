@@ -5,8 +5,7 @@
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, viewport-fit=cover">
     <title>Vyla Vehicle</title>
     <style>
-        html { height: 100%; }
-        body {
+        html, body {
             margin: 0; padding: 0; 
             background-color: #000000;
             overflow: hidden; 
@@ -16,10 +15,13 @@
         }
 
         .splash-container {
-            width: 200px;
+            width: 280px;
             height: auto;
             opacity: 1;
             transition: opacity 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         /* Animação do Hypercar */
@@ -29,9 +31,9 @@
             stroke-width: 1.5;
             stroke-linecap: round;
             stroke-linejoin: round;
-            stroke-dasharray: 400;
-            stroke-dashoffset: 400;
-            animation: drawCar 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, fillCar 1s ease-out 2.2s forwards;
+            stroke-dasharray: 1200;
+            stroke-dashoffset: 1200;
+            animation: drawCar 3s cubic-bezier(0.4, 0, 0.2, 1) forwards, fillCar 1s ease-out 2.8s forwards;
         }
 
         @keyframes drawCar {
@@ -39,37 +41,41 @@
         }
 
         @keyframes fillCar {
-            to { fill: rgba(10, 132, 255, 0.1); }
+            to { fill: rgba(10, 132, 255, 0.08); }
         }
 
         .brand-text {
-            margin-top: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin-top: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             color: #fff;
-            font-size: 14px;
-            letter-spacing: 4px;
+            font-size: 16px;
+            letter-spacing: 6px;
             text-transform: uppercase;
+            font-weight: 600;
             opacity: 0;
-            animation: fadeInText 1s ease-out 1s forwards;
+            animation: fadeInText 1.5s ease-out 1.5s forwards;
         }
 
-        @keyframes fadeInText { to { opacity: 0.7; } }
+        @keyframes fadeInText { 
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 0.9; } 
+        }
     </style>
 </head>
 <body>
     <div class="splash-container" id="splash">
-        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-            <!-- Hypercar Silhouette -->
-            <path class="car-path" d="M10,60 L30,50 L60,50 L80,30 L140,30 L160,50 L190,50 L195,60 Z" />
+        <svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
+            <!-- Hypercar Silhouette Path: Aerodinâmico e detalhado -->
+            <path class="car-path" d="M290,75 L280,60 Q260,35 210,35 L110,35 Q70,35 50,60 L30,75 L20,85 L50,85 A18,18 0 0,1 86,85 L214,85 A18,18 0 0,1 250,85 L280,85 L290,75 Z M110,35 L105,85 M210,35 L215,85 M60,60 L260,60" />
         </svg>
-        <div class="brand-text">HYPERENGINE</div>
+        <div class="brand-text">VYLA VEHICLE</div>
     </div>
 
     <script>
         window.onload = function() {
             setTimeout(function() {
-                const splash = document.getElementById('splash');
-                splash.style.opacity = '0';
+                document.body.style.transition = "opacity 0.5s ease";
+                document.body.style.opacity = '0';
                 
                 setTimeout(function() {
                     if (localStorage.getItem("onboard_done") === "true") {

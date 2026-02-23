@@ -150,6 +150,14 @@
         }
         .modal-action-btn:active { transform: scale(0.96); }
 
+        .secondary-btn {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-secondary);
+            margin-top: calc(15px * var(--ui-scale));
+            display: none; /* Oculto por padrão */
+        }
+
         .btn-success { background: var(--success-color); }
 
         .onboarding-dots { 
@@ -168,13 +176,13 @@
         /* Notificação Premium de Permissão Negada */
         .permission-toast {
             position: fixed;
-            top: calc(-120px * var(--ui-scale)); 
+            top: calc(-120px * var(--ui-scale));
             left: 50%;
             transform: translateX(-50%);
             background: rgba(28, 28, 30, 0.85);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 59, 48, 0.4); /* Vermelho suave */
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            border: 1px solid rgba(255, 59, 48, 0.5); /* Vermelho suave */
             border-radius: calc(24px * var(--ui-scale));
             padding: calc(16px * var(--ui-scale)) calc(24px * var(--ui-scale));
             color: #fff;
@@ -192,7 +200,7 @@
             transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .permission-toast.visible {
-            top: calc(70px * var(--ui-scale)); /* Abaixo do Notch/Dynamic Island */
+            top: calc(85px * var(--ui-scale)); /* Abaixo do Notch/Dynamic Island */
         }
 
         /* Spinner para botões */
@@ -293,6 +301,7 @@
             <h1>Precisão de GPS</h1>
             <p class="subtitle">Ative a localização para visualização de rotas em tempo real e cálculo exato de distâncias.</p>
             <button class="modal-action-btn" id="btn-allow-location">Permitir Acesso GPS</button>
+            <button class="modal-action-btn secondary-btn" id="btn-settings-loc">Abrir Configurações</button>
         </div>
         
         <div class="onboarding-slide" id="slide-notification">
@@ -305,6 +314,7 @@
             <h1>Alertas Críticos</h1>
             <p class="subtitle">Receba avisos instantâneos de ignição, movimento não autorizado ou saída de perímetro.</p>
             <button class="modal-action-btn" id="btn-allow-notification">Ativar Notificações</button>
+            <button class="modal-action-btn secondary-btn" id="btn-settings-push">Abrir Configurações</button>
         </div>
         
         <div class="onboarding-slide" id="slide-finish">
@@ -330,6 +340,7 @@
     <script type="module">
         import { Geolocation } from '@capacitor/geolocation';
         import { PushNotifications } from '@capacitor/push-notifications';
+        import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
 
         // --- SISTEMA DE PREVIEW DE TEMA ---
         const darkToggle = document.getElementById('onboard-dark-toggle');
@@ -404,6 +415,20 @@
         setTimeout(() => advanceToSlide(0), 100);
 
         // Helper: Notificação Premium com Ícone
+        async function openSettings() {
+            try {
+                await NativeSettings.open({
+                    optionAndroid: AndroidSettings.ApplicationDetails,
+                    optionIOS: IOSSettings.App
+                });
+            } catch (e) {
+                console.warn('Settings Error:', e);
+                alert('Por favor, ative as permissões nas Configurações do seu dispositivo.');
+            }
+        }
+        document.getElementById('btn-settings-loc').onclick = openSettings;
+        document.getElementById('btn-settings-push').onclick = openSettings;
+
         function showPermissionError(message) {
             const toast = document.getElementById('perm-toast');
             // Injeta ícone SVG e mensagem
@@ -422,10 +447,9 @@
         document.getElementById('btn-start-onboarding').onclick = () => advanceToSlide(1);
         document.getElementById('btn-save-theme').onclick = () => advanceToSlide(2);
 
-        let locAttempts = 0;
         document.getElementById('btn-allow-location').onclick = async () => {
             const btn = document.getElementById('btn-allow-location');
-            const originalText = btn.innerText;
+            const originalText = "Permitir Acesso GPS";
             
             // Estado de Loading
             btn.innerHTML = '<span class="btn-spinner"></span> Verificando...'; 
@@ -446,28 +470,19 @@
                 btn.classList.add('shake');
                 setTimeout(() => btn.classList.remove('shake'), 500);
 
-                locAttempts++;
-                if (locAttempts >= 2) {
-                    advanceToSlide(3);
-                    return;
-                }
-
                 // Reset do Botão (Rearme)
-                btn.innerHTML = "Tentar Novamente"; 
+                btn.innerHTML = originalText; 
                 btn.style.pointerEvents = 'auto';
                 
+                document.getElementById('btn-settings-loc').style.display = 'block';
                 // Mensagem específica baseada no erro
-                const msg = error.message === 'denied' 
-                    ? "Permissão bloqueada. Ative nas Definições > Privacidade." 
-                    : "Precisamos da sua localização para o mapa funcionar.";
-                showPermissionError(msg);
+                showPermissionError("Acesso Obrigatório. Se recusou, ative nas configurações do seu sistema para avançar.");
             } 
         };
 
-        let pushAttempts = 0;
         document.getElementById('btn-allow-notification').onclick = async () => {
             const btn = document.getElementById('btn-allow-notification');
-            const originalText = btn.innerText;
+            const originalText = "Ativar Notificações";
             
             // Estado de Loading
             btn.innerHTML = '<span class="btn-spinner"></span> Verificando...';
@@ -494,21 +509,12 @@
                 btn.classList.add('shake');
                 setTimeout(() => btn.classList.remove('shake'), 500);
 
-                pushAttempts++;
-                if (pushAttempts >= 2) {
-                    localStorage.setItem('notifications_enabled', 'false');
-                    advanceToSlide(4);
-                    return;
-                }
-
                 // Reset do Botão (Rearme)
-                btn.innerHTML = "Tentar Novamente"; 
+                btn.innerHTML = originalText; 
                 btn.style.pointerEvents = 'auto';
                 
-                const msg = error.message === 'denied'
-                    ? "Notificações bloqueadas pelo sistema. Verifique as definições."
-                    : "Ative as notificações para receber alertas de segurança.";
-                showPermissionError(msg);
+                document.getElementById('btn-settings-push').style.display = 'block';
+                showPermissionError("Acesso Obrigatório. Se recusou, ative nas configurações do seu sistema para avançar.");
             }
         };
 
