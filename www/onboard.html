@@ -168,26 +168,31 @@
         /* Notificação Premium de Permissão Negada */
         .permission-toast {
             position: fixed;
-            top: -100px; left: 50%;
+            top: calc(-120px * var(--ui-scale)); 
+            left: 50%;
             transform: translateX(-50%);
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 59, 48, 0.3); /* Vermelho suave */
-            border-radius: 16px;
-            padding: 16px 24px;
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 59, 48, 0.4); /* Vermelho suave */
+            border-radius: calc(24px * var(--ui-scale));
+            padding: calc(16px * var(--ui-scale)) calc(24px * var(--ui-scale));
             color: #fff;
-            font-size: 14px;
-            font-weight: 500;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            font-size: calc(14px * var(--ui-scale));
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: calc(12px * var(--ui-scale));
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
             z-index: 2000;
             width: 90%;
-            max-width: 350px;
-            transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: calc(360px * var(--ui-scale));
+            transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .permission-toast.visible {
-            top: 20px;
+            top: calc(70px * var(--ui-scale)); /* Abaixo do Notch/Dynamic Island */
         }
 
         /* Spinner para botões */
@@ -199,6 +204,15 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin-right: 8px;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
         }
     </style>
 </head>
@@ -389,10 +403,11 @@
         });
         setTimeout(() => advanceToSlide(0), 100);
 
-        // Helper: Notificação Premium
-        function showPermissionError() {
+        // Helper: Notificação Premium com Ícone
+        function showPermissionError(message) {
             const toast = document.getElementById('perm-toast');
-            toast.innerText = "Acesso Obrigatório: Precisamos dessa permissão para o aplicativo funcionar. Por favor, tente novamente e clique em Permitir.";
+            // Injeta ícone SVG e mensagem
+            toast.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>${message || "Acesso necessário para continuar."}</span>`;
             toast.classList.add('visible');
             
             // Vibração de erro (se disponível)
@@ -407,36 +422,61 @@
         document.getElementById('btn-start-onboarding').onclick = () => advanceToSlide(1);
         document.getElementById('btn-save-theme').onclick = () => advanceToSlide(2);
 
+        let locAttempts = 0;
         document.getElementById('btn-allow-location').onclick = async () => {
             const btn = document.getElementById('btn-allow-location');
             const originalText = btn.innerText;
+            
+            // Estado de Loading
             btn.innerHTML = '<span class="btn-spinner"></span> Verificando...'; 
             btn.style.pointerEvents = 'none';
 
             try {
+                // Tenta pedir permissão
                 const perm = await Geolocation.requestPermissions();
                 
                 if (perm.location === 'granted' || perm.location === 'coarse') {
                     advanceToSlide(3);
                 } else {
-                    throw new Error('Denied');
+                    throw new Error(perm.location); // Lança o estado exato (denied/prompt)
                 }
             } catch (error) { 
-                console.error('GPS Denied', error);
-                btn.innerHTML = originalText; // Restaura texto
+                console.warn('GPS Status:', error.message);
+                
+                btn.classList.add('shake');
+                setTimeout(() => btn.classList.remove('shake'), 500);
+
+                locAttempts++;
+                if (locAttempts >= 2) {
+                    advanceToSlide(3);
+                    return;
+                }
+
+                // Reset do Botão (Rearme)
+                btn.innerHTML = "Tentar Novamente"; 
                 btn.style.pointerEvents = 'auto';
-                showPermissionError();
+                
+                // Mensagem específica baseada no erro
+                const msg = error.message === 'denied' 
+                    ? "Permissão bloqueada. Ative nas Definições > Privacidade." 
+                    : "Precisamos da sua localização para o mapa funcionar.";
+                showPermissionError(msg);
             } 
         };
 
+        let pushAttempts = 0;
         document.getElementById('btn-allow-notification').onclick = async () => {
             const btn = document.getElementById('btn-allow-notification');
             const originalText = btn.innerText;
+            
+            // Estado de Loading
             btn.innerHTML = '<span class="btn-spinner"></span> Verificando...';
             btn.style.pointerEvents = 'none';
 
             try {
                 let perm = await PushNotifications.checkPermissions();
+                
+                // Se ainda não perguntou, pergunta agora
                 if (perm.receive === 'prompt') await PushNotifications.requestPermissions();
                 
                 // Re-check após o prompt
@@ -446,13 +486,29 @@
                     localStorage.setItem('notifications_enabled', 'true');
                     advanceToSlide(4);
                 } else {
-                    throw new Error('Denied');
+                    throw new Error(perm.receive); // Lança estado (denied)
                 }
             } catch (error) { 
-                console.error('Push Denied', error);
-                btn.innerHTML = originalText; // Restaura texto
+                console.warn('Push Status:', error.message);
+                
+                btn.classList.add('shake');
+                setTimeout(() => btn.classList.remove('shake'), 500);
+
+                pushAttempts++;
+                if (pushAttempts >= 2) {
+                    localStorage.setItem('notifications_enabled', 'false');
+                    advanceToSlide(4);
+                    return;
+                }
+
+                // Reset do Botão (Rearme)
+                btn.innerHTML = "Tentar Novamente"; 
                 btn.style.pointerEvents = 'auto';
-                showPermissionError();
+                
+                const msg = error.message === 'denied'
+                    ? "Notificações bloqueadas pelo sistema. Verifique as definições."
+                    : "Ative as notificações para receber alertas de segurança.";
+                showPermissionError(msg);
             }
         };
 

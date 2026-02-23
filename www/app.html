@@ -1,34 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <style>
+        /* PROTEÇÃO ANTI-FOUC: Força fundo preto imediato */
+        html, body { background-color: #000000 !important; }
+        
+        /* Garante que o esqueleto nasça com a cor correta do tema escuro */
+        .skeleton-layer { background-color: #000000 !important; }
+        .skeleton-header-row, .skeleton-main-card, .skeleton-bottom-bar, .skeleton-circle, .skeleton-line { 
+            background-color: #1C1C1E !important; 
+            border-color: #2C2C2E !important; 
+        }
+        
+        /* Oculta a UI real até estar pronta */
+        #ui-layer { opacity: 0; animation: fadeInApp 0.8s ease-out forwards; }
+        @keyframes fadeInApp { to { opacity: 1; } }
+    </style>
+    <script>
+        // IIFE Síncrona para definir tema antes do primeiro paint
+        (function() {
+            const isDark = localStorage.getItem('theme') !== 'light';
+            if (!isDark) { 
+                document.documentElement.classList.add('light-mode'); 
+                // Remove a proteção de fundo preto se for tema claro (opcional, mas mantém consistência)
+                // document.documentElement.style.setProperty('--bg-color', '#F2F2F7');
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
-    <!-- Viewport otimizado para mobile: desabilita zoom, usa toda a área, cobre o notch (viewport-fit=cover) -->
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, viewport-fit=cover">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
     
-    <!-- CSP permissiva para desenvolvimento, deve ser restrita em produção -->
     <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: gap: content: blob:; worker-src * blob:;">
     
     <title>HyperEngine Mobile</title>
-    <script>
-        // Anti-FOUC: Injeção Imediata de Tema
-        (function() {
-            // Força preto inicial para transição suave do Splash Screen
-            document.documentElement.style.setProperty('--bg-color', '#000000');
-        })();
-    </script>
     <script>
         if (!localStorage.getItem("onboard_done")) {
             window.location.replace("onboard.html");
         }
 
-        // Monitoramento de Recursos Críticos (CSS/JS)
         window.addEventListener('error', function(e) {
             if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
                 console.error('[CRITICAL] Falha no carregamento:', e.target.src || e.target.href);
-                
-                // Tratamento visual para falha no bootstrap.js
                 if (e.target.src && e.target.src.includes('bootstrap.js')) {
                     const skeleton = document.getElementById('app-skeleton');
                     if (skeleton) {
@@ -45,10 +59,8 @@
                 }
             }
         }, true);
-
     </script>
     
-    <!-- Mapbox GL (Essencial para o Mapa) -->
     <script type="module" src="libs/mapbox-gl.js"></script>
     <link href="libs/mapbox-gl.css" rel="stylesheet" />
 
@@ -58,7 +70,6 @@
 <body>
     <div id="dynamic-bg"></div>
 
-    <!-- Skeleton Loader (Tela de Carregamento) -->
     <div id="app-skeleton" class="skeleton-layer">
         <div class="skeleton-header-row">
             <div class="skeleton-circle skeleton-shimmer"></div>
@@ -71,37 +82,28 @@
         <div class="skeleton-bottom-bar skeleton-shimmer"></div>
     </div>
 
-    <!-- Camada de Renderização Principal (GPU) -->
     <canvas id="gl-canvas"></canvas>
 
-    <!-- Camada de UI / Telemetria (DOM Mínimo) -->
     <div id="ui-layer" class="gpu-layer">
         <div id="telemetry">INITIALIZING KERNEL...</div>
 
-        <!-- Notificação Toast (Feedback de Sucesso) -->
         <div id="toast-notification" class="toast">
             <div class="toast-icon">✓</div>
             <span id="toast-message">Salvo com sucesso</span>
         </div>
 
-        <!-- --- SEÇÕES DO APP --- -->
-
-        <!-- 1. Início (Garagem) -->
         <div id="home-section" class="app-section active">
             <div id="garage-container"></div>
         </div>
 
-        <!-- FAB (Botão Flutuante) -->
         <div id="fab-add-car" class="add-car-fab fab-container" style="display: none;">+</div>
 
-        <!-- 2. Mapa -->
         <div id="map-section" class="app-section">
             <div id="map-container"></div>
             <div id="map-indicators-container"></div>
             
             <div class="map-ui-box">
                 <div id="map-loader" class="map-loader">Atualizando...</div>
-                <!-- Controles Personalizados do Mapa -->
                 <div class="map-custom-controls">
                     <button id="map-compass-btn" class="map-control-btn">
                         <div id="map-compass-icon" style="display: flex; align-items: center; justify-content: center; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);">
@@ -123,14 +125,12 @@
             </div>
         </div>
 
-        <!-- 3. Alertas -->
         <div id="alerts-section" class="app-section">
             <div class="empty-garage-box" style="border: none; background: transparent;">
                 <div class="empty-garage-text">Sem novos alertas.</div>
             </div>
         </div>
 
-        <!-- 4. Configurações -->
         <div id="settings-section" class="app-section">
             <div class="settings-box">
                 <div class="settings-container" style="margin-bottom: 15px;">
@@ -205,7 +205,6 @@
             </div>
         </div>
 
-        <!-- Wizard Adicionar Carro (Fase 1) -->
         <div id="add-car-wizard" class="modal-overlay">
             <div class="modal-box">
                 <div class="modal-header">
@@ -220,7 +219,6 @@
 
                 <div class="wizard-container">
                     <div class="wizard-slider" id="wizard-slider">
-                        <!-- PASSO 1: DADOS -->
                         <div class="wizard-step active" id="wizard-step-1">
                             <div class="input-group">
                                 <input type="text" id="car-brand" class="modal-input" placeholder="Marca" autocomplete="off">
@@ -264,7 +262,6 @@
                             </button>
                         </div>
 
-                        <!-- PASSO 2: FOTO E APELIDO -->
                         <div class="wizard-step" id="wizard-step-2">
                             <div class="modal-hint">
                                 Personalize seu <span id="summary-brand" style="color:var(--accent-color);font-weight:700;"></span> <span id="summary-model" style="font-weight:700;"></span>
@@ -301,7 +298,6 @@
             </div>
         </div>
 
-        <!-- Modal Confirmação de Descarte -->
         <div id="confirm-discard-modal" class="modal-overlay" style="z-index: 2100;">
             <div class="modal-box shake-modal">
                 <div class="modal-header centered-header">
@@ -315,7 +311,6 @@
             </div>
         </div>
 
-        <!-- Modal de Recorte (Crop) -->
         <div id="crop-modal" class="modal-overlay" style="z-index: 2200;">
             <div class="modal-box" style="padding: 0; background: #000; height: 100%; width: 100%; border-radius: 0;">
                 <div class="crop-viewport">
@@ -339,7 +334,6 @@
             </div>
         </div>
 
-        <!-- Action Sheet (Fase 3) -->
         <div id="car-action-sheet" class="modal-overlay">
             <div class="action-sheet-panel">
                 <div class="action-sheet-item" id="action-locate">
@@ -361,7 +355,6 @@
             </div>
         </div>
 
-        <!-- Painel Inferior Unificado (Bottom Panel) -->
         <div id="bottom-panel">
             <div class="widgets-row">
                 <div class="widget active" data-target="home-section">

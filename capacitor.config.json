@@ -1,5 +1,12 @@
 {
   "appId": "com.vyla.vehicle",
   "appName": "Vehicle",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": true,
+      "backgroundColor": "#000000"
+    }
+  }
 }
